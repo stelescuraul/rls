@@ -1,0 +1,1 @@
+export const TENANT_CONNECTION: unique symbol = Symbol('TENANT_CONNECTION');
