@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "lib": [
+      "es2019"
+    ],
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "es2017",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "src/*": [
+        "src/*"
+      ]
+    },
+    "rootDirs": [
+      "src"
+    ],
+    "moduleResolution": "node"
+  },
+  "include": [
+    "src/**/*.ts",
+    "utils/**/*.ts",
+    "test/**/*.ts",
+    "lib/**/*.ts"
+  ]
+}

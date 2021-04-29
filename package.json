@@ -1,0 +1,39 @@
+{
+  "name": "@avallone-io/template",
+  "version": "1.3.0",
+  "description": "A template repository for libraries",
+  "scripts": {
+    "test": "echo \"Error: no test specified\"",
+    "lint": "eslint \"{src,apps,lib,test}/**/*.ts\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Avallone-io/template-lib.git"
+  },
+  "author": "Raul Stelescu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Avallone-io/template-lib/issues"
+  },
+  "homepage": "https://github.com/Avallone-io/template-lib#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^12.1.1",
+    "@commitlint/config-conventional": "^12.1.1",
+    "@semantic-release/changelog": "^5.0.1",
+    "@semantic-release/git": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
+    "eslint": "^7.25.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-prettier": "^3.4.0",
+    "husky": "^6.0.0",
+    "prettier": "^2.2.1",
+    "semantic-release": "^17.4.2",
+    "semantic-release-slack-bot": "^2.1.0",
+    "typescript": "^4.2.4"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
