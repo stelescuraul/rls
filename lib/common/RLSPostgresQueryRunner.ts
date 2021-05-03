@@ -1,10 +1,10 @@
-import {
-  TenantId,
-  TenancyModelOptions,
-  ActorId,
-} from 'lib/interfaces/tenant-options.interface';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
+import {
+  ActorId,
+  TenancyModelOptions,
+  TenantId,
+} from '../interfaces/tenant-options.interface';
 
 export class RLSPostgresQueryRunner extends PostgresQueryRunner {
   tenantId: TenantId = null;

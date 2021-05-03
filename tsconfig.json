@@ -14,12 +14,12 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "src/*": [
-        "src/*"
+      "lib/*": [
+        "lib/*"
       ]
     },
     "rootDirs": [
-      "src"
+      "lib"
     ],
     "moduleResolution": "node"
   },

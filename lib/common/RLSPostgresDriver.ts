@@ -1,9 +1,9 @@
-import { RLSPostgresQueryRunner } from 'lib/common/RLSPostgresQueryRunner';
+import { RLSPostgresQueryRunner } from './RLSPostgresQueryRunner';
 import {
   ActorId,
   TenancyModelOptions,
   TenantId,
-} from 'lib/interfaces/tenant-options.interface';
+} from '../interfaces/tenant-options.interface';
 import { Connection, QueryRunner, ReplicationMode } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 

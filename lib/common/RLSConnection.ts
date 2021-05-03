@@ -1,9 +1,9 @@
-import { RLSPostgresDriver } from 'lib/common/RLSPostgresDriver';
+import { RLSPostgresDriver } from '../common/RLSPostgresDriver';
 import {
   ActorId,
   TenancyModelOptions,
   TenantId,
-} from 'lib/interfaces/tenant-options.interface';
+} from '../interfaces/tenant-options.interface';
 import { Connection } from 'typeorm';
 
 export class RLSConnection extends Connection {
