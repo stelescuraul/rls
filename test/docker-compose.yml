@@ -1,0 +1,21 @@
+version: '3.7'
+
+services:
+  postgres:
+    image: postgres:11
+    container_name: rls-test-postgres
+    ports:
+      - 5440:5432
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+
+  rls-test:
+    container_name: rls-test
+    build:
+      context: ../
+      dockerfile: ./test/Dockerfile
+    command: npm run test:mocha
+    volumes:
+      - ../:/usr/src/app
+    depends_on:
+      - postgres

@@ -8,6 +8,7 @@
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "resolveJsonModule": true,
     "target": "es2017",
     "sourceMap": true,
     "outDir": "./dist",
@@ -16,10 +17,14 @@
     "paths": {
       "lib/*": [
         "lib/*"
+      ],
+      "test/*": [
+        "test/*"
       ]
     },
     "rootDirs": [
-      "lib"
+      "lib",
+      "test"
     ],
     "moduleResolution": "node"
   },
@@ -27,6 +32,7 @@
     "src/**/*.ts",
     "utils/**/*.ts",
     "test/**/*.ts",
-    "lib/**/*.ts"
+    "lib/**/*.ts",
+    "ormconfig.json"
   ]
 }
