@@ -28,4 +28,10 @@ export class RLSConnection extends Connection {
     const manager = this.createEntityManager();
     Object.assign(this, { manager });
   }
+
+  close(): Promise<void> {
+    throw new Error(
+      'Cannot close connection on a virtual connection. Use the original connection object to close the connection',
+    );
+  }
 }
