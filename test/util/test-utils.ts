@@ -54,6 +54,7 @@ export interface TestingOptions {
   /**
    * Entities needs to be included in the connection for the given test suite.
    */
+  // eslint-disable-next-line @typescript-eslint/ban-types
   entities?: (string | Function | EntitySchema<any>)[];
 
   /**
@@ -64,6 +65,7 @@ export interface TestingOptions {
   /**
    * Subscribers needs to be included in the connection for the given test suite.
    */
+  // eslint-disable-next-line @typescript-eslint/ban-types
   subscribers?: string[] | Function[];
 
   /**
