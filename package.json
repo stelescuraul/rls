@@ -70,16 +70,20 @@
   },
   "nyc": {
     "extension": [
-      ".ts",
-      ".tsx"
+      ".ts"
     ],
     "exclude": [
       "**/*.d.ts",
       "**/Dockerfile",
       "**/docker-compose.yml",
       "lib/interfaces/**/*",
+      "lib/**/*.constants.ts",
       "test/**/*",
       "dist/**/*"
+    ],
+    "include": [
+      "lib/*",
+      "lib/**/*"
     ],
     "reporter": [
       "html"
