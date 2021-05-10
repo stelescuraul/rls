@@ -2,8 +2,8 @@
   {
     "skip": false,
     "type": "postgres",
-    "host": "postgres",
-    "port": 5432,
+    "host": "localhost",
+    "port": 5440,
     "username": "postgres",
     "password": "",
     "database": "postgres",
