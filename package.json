@@ -3,10 +3,13 @@
   "version": "0.0.1",
   "description": "Row level security package for TypeORM and NestJS",
   "scripts": {
-    "test": "docker-compose -f test/docker-compose.yml run --rm rls-test",
+    "test": "docker-compose -f test/docker-compose.yml run --rm rls-test && npm run postgres:down",
     "test:mocha": "rm -rf ./dist && tsc && mocha --file ./dist/test/util/test-setup.js --bail --recursive --timeout 60000 ./dist/test",
     "lint": "eslint \"{src,apps,lib,test}/**/*.ts\"",
-    "coverage": "docker-compose -f test/docker-compose.yml up -d postgres && nyc mocha --file ./test/util/test-setup.ts ./test/**/*.spec.* && docker-compose -f test/docker-compose.yml down postgres"
+    "postgres:up": "docker-compose -f test/docker-compose.yml up -d postgres",
+    "postgres:down": "docker-compose -f test/docker-compose.yml down",
+    "coverage": "npm run postgres:up && npm run coverage:test && npm run postgres:down",
+    "coverage:test": "nyc mocha --file ./test/util/test-setup.ts ./test/**/*.spec.* "
   },
   "repository": {
     "type": "git",
@@ -73,7 +76,9 @@
       "**/*.d.ts",
       "**/Dockerfile",
       "**/docker-compose.yml",
-      "test/util"
+      "lib/interfaces/**/*",
+      "test/**/*",
+      "dist/**/*"
     ],
     "reporter": [
       "html"
