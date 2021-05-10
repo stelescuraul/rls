@@ -15,7 +15,7 @@ export const createTypeormRLSProviders = (
 ): Provider[] => {
   return (entities || []).map(entity => {
     return {
-      provide: getRepositoryToken(entity, connection as any),
+      provide: getRepositoryToken(entity, connection),
       useFactory: (connection: Connection) => {
         if (
           entity instanceof Function &&

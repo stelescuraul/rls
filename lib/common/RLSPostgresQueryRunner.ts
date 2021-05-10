@@ -1,3 +1,4 @@
+import { ReplicationMode } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import {
@@ -12,15 +13,14 @@ export class RLSPostgresQueryRunner extends PostgresQueryRunner {
 
   constructor(
     driver: PostgresDriver,
-    mode,
+    mode: ReplicationMode,
     tenancyModelOptions: TenancyModelOptions,
   ) {
     super(driver, mode);
-    this.tenantId = tenancyModelOptions.tenantId;
-    this.actorId = tenancyModelOptions.actorId;
+    this.setOptions(tenancyModelOptions);
   }
 
-  setOptions(tenancyModelOptions: TenancyModelOptions) {
+  private setOptions(tenancyModelOptions: TenancyModelOptions) {
     this.tenantId = tenancyModelOptions.tenantId;
     this.actorId = tenancyModelOptions.actorId;
   }

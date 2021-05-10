@@ -5,8 +5,11 @@ import {
   TenantId,
 } from '../interfaces/tenant-options.interface';
 import { Connection } from 'typeorm';
+import { RLSPostgresQueryRunner } from 'lib/common/RLSPostgresQueryRunner';
 
 export class RLSConnection extends Connection {
+  readonly driver: RLSPostgresDriver;
+
   tenantId: TenantId = null;
   actorId: ActorId = null;
 
@@ -27,6 +30,10 @@ export class RLSConnection extends Connection {
 
     const manager = this.createEntityManager();
     Object.assign(this, { manager });
+  }
+
+  createQueryRunner(): RLSPostgresQueryRunner {
+    return super.createQueryRunner() as RLSPostgresQueryRunner;
   }
 
   close(): Promise<void> {

@@ -1,14 +1,14 @@
-import { Post } from './entity/Post';
+import { expect } from 'chai';
+import { Connection, createConnection } from 'typeorm';
+import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
+import { RLSConnection, RLSPostgresQueryRunner } from '../../lib/common';
+import { TenancyModelOptions } from '../../lib/interfaces';
 import {
   closeTestingConnections,
   reloadTestingDatabases,
   setupSingleTestingConnection,
 } from '../util/test-utils';
-import { Connection, createConnection } from 'typeorm';
-import { RLSConnection } from '../../lib/common';
-import { TenancyModelOptions } from '../../lib/interfaces';
-import { expect } from 'chai';
-import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
+import { Post } from './entity/Post';
 
 describe('RLSConnection', () => {
   let connection: RLSConnection;
@@ -105,11 +105,31 @@ describe('RLSConnection', () => {
         originalConnection,
         tenantModelOptions,
       );
-      expect(tempConnection.close).to.throw;
+      expect(tempConnection.close).to.throw(/Cannot close connection .*/);
       expect(tempConnection.isConnected).to.be.true;
       expect(originalConnection.isConnected).to.be.true;
       expect((originalConnection.driver as PostgresDriver).master.ending).to.be
         .false;
+    });
+  });
+
+  describe('#createQueryRunner', () => {
+    it('should return an instance of RLSPostgresQueryRunner', () => {
+      expect(connection.createQueryRunner()).to.not.throw;
+
+      const qr = connection.createQueryRunner();
+      expect(qr).to.be.instanceOf(RLSPostgresQueryRunner);
+    });
+
+    it('should have the right tenant and actor', () => {
+      const qr = connection.createQueryRunner();
+
+      expect(qr)
+        .to.have.property('tenantId')
+        .and.be.equal(tenantModelOptions.tenantId);
+      expect(qr)
+        .to.have.property('actorId')
+        .and.be.equal(tenantModelOptions.actorId);
     });
   });
 });

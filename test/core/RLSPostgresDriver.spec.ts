@@ -4,12 +4,16 @@ import {
   setupSingleTestingConnection,
 } from '../util/test-utils';
 import { Connection, createConnection, Driver } from 'typeorm';
-import { RLSConnection, RLSPostgresDriver } from '../../lib/common';
+import {
+  RLSConnection,
+  RLSPostgresDriver,
+  RLSPostgresQueryRunner,
+} from '../../lib/common';
 import { TenancyModelOptions } from '../../lib/interfaces';
 import { expect } from 'chai';
 
 describe('RLSPostgresDriver', () => {
-  let driver: Driver;
+  let driver: RLSPostgresDriver;
   let originalDriver: Driver;
 
   let connection: RLSConnection;
@@ -55,5 +59,29 @@ describe('RLSPostgresDriver', () => {
     expect(driver)
       .to.have.property('connection')
       .and.be.instanceOf(RLSConnection);
+  });
+
+  it('should not be the same original driver', () => {
+    expect(driver).to.not.deep.equal(originalDriver);
+  });
+
+  describe('#createQueryRunner', () => {
+    it('should return an instance of RLSPostgresQueryRunner', () => {
+      expect(driver.createQueryRunner('master')).to.not.throw;
+
+      const qr = driver.createQueryRunner('master');
+      expect(qr).to.be.instanceOf(RLSPostgresQueryRunner);
+    });
+
+    it('should have the right tenant and actor', () => {
+      const qr = driver.createQueryRunner('master');
+
+      expect(qr)
+        .to.have.property('tenantId')
+        .and.be.equal(tenantModelOptions.tenantId);
+      expect(qr)
+        .to.have.property('actorId')
+        .and.be.equal(tenantModelOptions.actorId);
+    });
   });
 });
