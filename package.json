@@ -5,7 +5,8 @@
   "scripts": {
     "test": "docker-compose -f test/docker-compose.yml run --rm rls-test",
     "test:mocha": "rm -rf ./dist && tsc && mocha --file ./dist/test/util/test-setup.js --bail --recursive --timeout 60000 ./dist/test",
-    "lint": "eslint \"{src,apps,lib,test}/**/*.ts\""
+    "lint": "eslint \"{src,apps,lib,test}/**/*.ts\"",
+    "coverage": "docker-compose -f test/docker-compose.yml up -d postgres && nyc mocha --file ./test/util/test-setup.ts ./test/**/*.spec.* && docker-compose -f test/docker-compose.yml down postgres"
   },
   "repository": {
     "type": "git",
@@ -41,12 +42,14 @@
     "express": "^4.17.1",
     "husky": "^6.0.0",
     "mocha": "^8.4.0",
+    "nyc": "^15.1.0",
     "pg": "^8.6.0",
     "prettier": "^2.2.1",
     "rxjs": "^6.5.4",
     "semantic-release": "^17.4.2",
     "semantic-release-slack-bot": "^2.1.0",
     "sinon-chai": "^3.6.0",
+    "ts-node": "^9.1.1",
     "typeorm": "^0.2.31",
     "typescript": "^4.2.4"
   },
@@ -60,5 +63,28 @@
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
+  },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "**/Dockerfile",
+      "**/docker-compose.yml",
+      "test/util"
+    ],
+    "reporter": [
+      "html"
+    ],
+    "all": true
+  },
+  "mocha": {
+    "require": [
+      "ts-node/register",
+      "source-map-support/register"
+    ],
+    "recursive": true
   }
 }

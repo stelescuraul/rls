@@ -4,15 +4,16 @@ import {
   TenancyModelOptions,
   TenantId,
 } from '../interfaces/tenant-options.interface';
-import { Connection, QueryRunner, ReplicationMode } from 'typeorm';
+import { QueryRunner, ReplicationMode } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
+import { RLSConnection } from 'lib/common/RLSConnection';
 
 export class RLSPostgresDriver extends PostgresDriver {
   tenantId: TenantId = null;
   actorId: ActorId = null;
 
   constructor(
-    connection: Connection,
+    connection: RLSConnection,
     tenancyModelOptions: TenancyModelOptions,
   ) {
     super(connection);
