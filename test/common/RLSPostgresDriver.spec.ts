@@ -9,7 +9,7 @@ import {
   RLSPostgresDriver,
   RLSPostgresQueryRunner,
 } from '../../lib/common';
-import { TenancyModelOptions } from '../../lib/interfaces';
+import { TenancyModelOptions } from '../interfaces';
 import { expect } from 'chai';
 
 describe('RLSPostgresDriver', () => {

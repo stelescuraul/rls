@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { Connection, createConnection } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { RLSConnection, RLSPostgresQueryRunner } from '../../lib/common';
-import { TenancyModelOptions } from '../../lib/interfaces';
+import { TenancyModelOptions } from '../interfaces';
 import {
   closeTestingConnections,
   reloadTestingDatabases,
