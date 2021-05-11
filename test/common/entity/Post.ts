@@ -25,4 +25,13 @@ export class Post extends BaseEntity {
   @ManyToMany(() => Category)
   @JoinTable()
   categories: Category[];
+
+  toJson() {
+    return {
+      id: this.id,
+      tenantId: this.tenantId,
+      userId: this.userId,
+      title: this.title,
+    };
+  }
 }

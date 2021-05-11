@@ -10,4 +10,12 @@ export class Category extends BaseEntity {
 
   @Column()
   name: string;
+
+  toJson() {
+    return {
+      id: this.id,
+      tenantId: this.tenantId,
+      name: this.name,
+    };
+  }
 }
