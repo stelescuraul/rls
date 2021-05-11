@@ -23,9 +23,14 @@ describe('RLSPostgresQueryRunner', () => {
 
   let queryRunner: RLSPostgresQueryRunner;
 
-  const tenantModelOptions: TenancyModelOptions = {
+  const fooTenant: TenancyModelOptions = {
     actorId: 10,
     tenantId: 1,
+  };
+
+  const barTenant: TenancyModelOptions = {
+    actorId: 20,
+    tenantId: 2,
   };
 
   before(async () => {
@@ -36,20 +41,14 @@ describe('RLSPostgresQueryRunner', () => {
     });
 
     originalConnection = await createConnection(connectionOptions);
-    connection = new RLSConnection(originalConnection, tenantModelOptions);
+    connection = new RLSConnection(originalConnection, fooTenant);
     driver = connection.driver;
   });
   beforeEach(async () => {
     await reloadTestingDatabases([connection]);
-    queryRunner = new RLSPostgresQueryRunner(
-      driver,
-      'master',
-      tenantModelOptions,
-    );
+    queryRunner = new RLSPostgresQueryRunner(driver, 'master', fooTenant);
   });
-  afterEach(async () => {
-    await queryRunner.release();
-  });
+  afterEach(async () => queryRunner.release());
   after(async () => await closeTestingConnections([originalConnection]));
 
   it('should be instance of RLSPostgresQueryRunner', () => {
@@ -64,7 +63,7 @@ describe('RLSPostgresQueryRunner', () => {
 
   it('should not be singleton instance', () => {
     expect(queryRunner).to.not.equal(
-      new RLSPostgresQueryRunner(driver, 'master', tenantModelOptions),
+      new RLSPostgresQueryRunner(driver, 'master', fooTenant),
     );
     expect(queryRunner).to.not.equal(connection.createQueryRunner());
     expect(queryRunner).to.not.equal(driver.createQueryRunner('master'));
@@ -87,19 +86,17 @@ describe('RLSPostgresQueryRunner', () => {
   describe('#query', () => {
     describe('$RLSPostgresQueryRunner', () => {
       runQueryTests(
-        tenantModelOptions,
-        () => new RLSPostgresQueryRunner(driver, 'master', tenantModelOptions),
+        fooTenant,
+        () => new RLSPostgresQueryRunner(driver, 'master', fooTenant),
       );
     });
 
     describe('$RLSPostgresDriver', () => {
-      runQueryTests(tenantModelOptions, () =>
-        driver.createQueryRunner('master'),
-      );
+      runQueryTests(fooTenant, () => driver.createQueryRunner('master'));
     });
 
     describe('$RLSConnection', () => {
-      runQueryTests(tenantModelOptions, () => connection.createQueryRunner());
+      runQueryTests(fooTenant, () => connection.createQueryRunner());
     });
   });
 
@@ -111,7 +108,8 @@ describe('RLSPostgresQueryRunner', () => {
     beforeEach(async () => {
       const testData = await setupMultiTenant(
         queryRunner,
-        tenantModelOptions,
+        fooTenant,
+        barTenant,
         tenantDbUser,
       );
 
@@ -134,9 +132,7 @@ describe('RLSPostgresQueryRunner', () => {
           `select current_setting('settings.tenant_id') as "tenantId"`,
         );
 
-        expect(parseInt(result.tenantId)).to.be.equal(
-          tenantModelOptions.tenantId,
-        );
+        expect(parseInt(result.tenantId)).to.be.equal(fooTenant.tenantId);
       });
 
       it('should have the actor_id set', async () => {
@@ -144,9 +140,7 @@ describe('RLSPostgresQueryRunner', () => {
           `select current_setting('settings.actor_id') as "actorId"`,
         );
 
-        expect(parseInt(result.actorId)).to.be.equal(
-          tenantModelOptions.actorId,
-        );
+        expect(parseInt(result.actorId)).to.be.equal(fooTenant.actorId);
       });
 
       it('should return the right category', async () => {
@@ -154,7 +148,7 @@ describe('RLSPostgresQueryRunner', () => {
           .to.eventually.have.lengthOf(1)
           .and.to.have.same.deep.members(
             categories
-              .filter(x => x.tenantId === tenantModelOptions.tenantId)
+              .filter(x => x.tenantId === fooTenant.tenantId)
               .map(x => x.toJson()),
           );
       });
@@ -166,8 +160,8 @@ describe('RLSPostgresQueryRunner', () => {
             posts
               .filter(
                 x =>
-                  x.tenantId === tenantModelOptions.tenantId &&
-                  x.userId === tenantModelOptions.actorId,
+                  x.tenantId === fooTenant.tenantId &&
+                  x.userId === fooTenant.actorId,
               )
               .map(x => x.toJson()),
           );
@@ -177,7 +171,7 @@ describe('RLSPostgresQueryRunner', () => {
         return expect(
           queryRunner.query(`select * from category where "tenantId" in ($1)`, [
             categories
-              .filter(x => x.tenantId !== tenantModelOptions.tenantId)
+              .filter(x => x.tenantId !== fooTenant.tenantId)
               .map(x => x.tenantId)
               .join(','),
           ]),
@@ -188,7 +182,7 @@ describe('RLSPostgresQueryRunner', () => {
         return expect(
           queryRunner.query(
             `select * from post where "tenantId" in ($1) or "userId" in ($2)`,
-            [11, 11],
+            [barTenant.tenantId, barTenant.actorId],
           ),
         ).to.eventually.have.lengthOf(0);
       });
@@ -208,7 +202,7 @@ describe('RLSPostgresQueryRunner', () => {
         await expect(
           queryRunner.query(
             `insert into category values (default, $1, 'allowed')`,
-            [tenantModelOptions.tenantId],
+            [fooTenant.tenantId],
           ),
         ).to.be.fulfilled;
 
@@ -220,8 +214,8 @@ describe('RLSPostgresQueryRunner', () => {
       it('should not allow to insert for wrong actorId', async () => {
         return expect(
           queryRunner.query(
-            `insert into post values (default, $1, 11, 'not allowed')`,
-            [tenantModelOptions.tenantId],
+            `insert into post values (default, $1, $2, 'not allowed')`,
+            [fooTenant.tenantId, 11],
           ),
         ).to.be.rejectedWith(
           QueryFailedError,
@@ -232,8 +226,8 @@ describe('RLSPostgresQueryRunner', () => {
       it(`should allow to insert for right actorId`, async () => {
         await expect(
           queryRunner.query(
-            `insert into post values (default, $1, 10, 'allowed')`,
-            [tenantModelOptions.tenantId],
+            `insert into post values (default, $1, $2, 'allowed')`,
+            [fooTenant.tenantId, fooTenant.actorId],
           ),
         ).to.be.fulfilled;
 
@@ -336,6 +330,20 @@ describe('RLSPostgresQueryRunner', () => {
         ).to.eventually.have.lengthOf(2);
       });
     });
+
+    describe('multiple-qr', () => {
+      let localQueryRunner: RLSPostgresQueryRunner;
+      beforeEach(() => {
+        localQueryRunner = new RLSPostgresQueryRunner(driver, 'master', {
+          tenantId: barTenant.tenantId,
+          actorId: barTenant.actorId,
+        });
+      });
+
+      afterEach(() => localQueryRunner.release());
+
+      it('should not have race conditions', async () => {});
+    });
   });
 });
 
@@ -403,33 +411,34 @@ function runQueryTests(
 
 async function setupMultiTenant(
   queryRunner: RLSPostgresQueryRunner,
-  tenantModelOptions: TenancyModelOptions,
+  fooTenant: TenancyModelOptions,
+  barTenant: TenancyModelOptions,
   tenantDbUser: string,
 ) {
   const fooCategory = await Category.create({
     name: 'FooCategory',
-    tenantId: tenantModelOptions.tenantId as number,
+    tenantId: fooTenant.tenantId as number,
   }).save();
   const barCategory = await Category.create({
     name: 'BarCategory',
-    tenantId: (tenantModelOptions.tenantId as number) + 10,
+    tenantId: barTenant.tenantId as number,
   }).save();
 
   const fooPost = await Post.create({
-    tenantId: tenantModelOptions.tenantId as number,
-    userId: tenantModelOptions.actorId as number,
+    tenantId: fooTenant.tenantId as number,
+    userId: fooTenant.actorId as number,
     title: 'Foo post',
     categories: [fooCategory],
   }).save();
   const foofooPost = await Post.create({
-    tenantId: tenantModelOptions.tenantId as number,
-    userId: (tenantModelOptions.actorId as number) + 1,
+    tenantId: fooTenant.tenantId as number,
+    userId: (fooTenant.actorId as number) + 1,
     title: 'Foofoo post',
     categories: [fooCategory],
   }).save();
   const barPost = await Post.create({
-    tenantId: (tenantModelOptions.tenantId as number) + 10,
-    userId: (tenantModelOptions.actorId as number) + 10,
+    tenantId: barTenant.tenantId as number,
+    userId: barTenant.actorId as number,
     title: 'Bar post',
     categories: [barCategory],
   }).save();
