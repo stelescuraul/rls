@@ -1,9 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "lib": [
-      "es2019"
-    ],
+    "lib": ["es2019"],
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -15,17 +13,10 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "lib/*": [
-        "lib/*"
-      ],
-      "test/*": [
-        "test/*"
-      ]
+      "lib/*": ["lib/*"],
+      "test/*": ["test/*"]
     },
-    "rootDirs": [
-      "lib",
-      "test"
-    ],
+    "rootDirs": ["lib", "test"],
     "moduleResolution": "node"
   },
   "include": [
@@ -33,6 +24,7 @@
     "utils/**/*.ts",
     "test/**/*.ts",
     "lib/**/*.ts",
-    "ormconfig.json"
+    "ormconfig.json",
+    "openCoverageReport.ts"
   ]
 }

@@ -9,7 +9,9 @@
     "postgres:up": "docker-compose -f test/docker-compose.yml up -d postgres",
     "postgres:down": "docker-compose -f test/docker-compose.yml down",
     "coverage": "npm run postgres:up && npm run coverage:test && npm run postgres:down",
-    "coverage:test": "nyc mocha --file ./test/util/test-setup.ts ./test/**/*.spec.* "
+    "coverage:test": "nyc mocha --file ./test/util/test-setup.ts ./test/**/*.spec.* ",
+    "coverage:open": "ts-node ./openCoverageReport.ts",
+    "coverage:html": "npm run coverage && npm run coverage:open"
   },
   "repository": {
     "type": "git",
@@ -46,6 +48,7 @@
     "husky": "^6.0.0",
     "mocha": "^8.4.0",
     "nyc": "^15.1.0",
+    "opn": "^6.0.0",
     "pg": "^8.6.0",
     "prettier": "^2.2.1",
     "rxjs": "^6.5.4",
