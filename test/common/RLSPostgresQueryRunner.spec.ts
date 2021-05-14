@@ -342,7 +342,7 @@ describe('RLSPostgresQueryRunner', () => {
       });
     });
 
-    describe.only('multiple-qr', () => {
+    describe('multiple-qr', () => {
       let localQueryRunner: RLSPostgresQueryRunner;
       let queryPrototypeStub: sinon.SinonStub;
       let clock: sinon.SinonFakeTimers;
