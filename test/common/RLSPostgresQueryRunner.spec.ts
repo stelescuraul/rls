@@ -100,7 +100,7 @@ describe('RLSPostgresQueryRunner', () => {
     });
   });
 
-  describe.only('multi-tenant', () => {
+  describe('multi-tenant', () => {
     const tenantDbUser = 'tenant_aware_user';
     let categories: Category[];
     let posts: Post[];
@@ -146,7 +146,7 @@ describe('RLSPostgresQueryRunner', () => {
       it('should return the right category', async () => {
         return expect(queryRunner.query(`select * from category`))
           .to.eventually.have.lengthOf(1)
-          .and.to.have.same.deep.members(
+          .and.to.deep.equal(
             categories
               .filter(x => x.tenantId === fooTenant.tenantId)
               .map(x => x.toJson()),
@@ -156,7 +156,7 @@ describe('RLSPostgresQueryRunner', () => {
       it('should return the right posts', async () => {
         return expect(queryRunner.query(`select * from post`))
           .to.eventually.have.lengthOf(1)
-          .and.to.have.same.deep.members(
+          .and.to.deep.equal(
             posts
               .filter(
                 x =>
@@ -291,13 +291,13 @@ describe('RLSPostgresQueryRunner', () => {
       it('should return all categories', () => {
         return expect(originalConnection.query(`select * from category`))
           .to.eventually.have.lengthOf(2)
-          .and.to.have.same.deep.members(categories.map(x => x.toJson()));
+          .and.to.be.deep.equal(categories.map(x => x.toJson()));
       });
 
       it('should return all posts', () => {
         return expect(originalConnection.query(`select * from post`))
           .to.eventually.have.lengthOf(3)
-          .and.to.have.same.deep.members(posts.map(x => x.toJson()));
+          .and.to.be.deep.equal(posts.map(x => x.toJson()));
       });
 
       it('should allow to insert for any tenant', async () => {
@@ -331,21 +331,134 @@ describe('RLSPostgresQueryRunner', () => {
       });
     });
 
-    describe('multiple-qr', () => {
+    describe.only('multiple-qr', () => {
       let localQueryRunner: RLSPostgresQueryRunner;
-      beforeEach(() => {
-        localQueryRunner = new RLSPostgresQueryRunner(driver, 'master', {
-          tenantId: barTenant.tenantId,
-          actorId: barTenant.actorId,
-        });
+      let queryPrototypeStub: sinon.SinonStub;
+      let clock: sinon.SinonFakeTimers;
+      const fooQueryString = `select * from category as c_foo`;
+      const barQueryString = `select * from category as c_bar`;
+
+      beforeEach(async () => {
+        // The connection and driver are reused but
+        // for the purpose of this test, it should be alright
+        localQueryRunner = new RLSPostgresQueryRunner(
+          driver,
+          'master',
+          barTenant,
+        );
+        await setQueryRunnerRole(localQueryRunner, tenantDbUser);
+
+        // By default allow the queries to go through
+        queryPrototypeStub = sinon
+          .stub(PostgresQueryRunner.prototype, 'query')
+          .callThrough();
+
+        clock = sinon.useFakeTimers();
       });
 
-      afterEach(() => localQueryRunner.release());
+      afterEach(async () => {
+        sinon.restore();
+        clock.restore();
+        await localQueryRunner.release();
+      });
 
-      it('should not have race conditions', async () => {});
+      it('should have 6 calls in total', async () => {
+        await queryRunner.query(fooQueryString);
+        await localQueryRunner.query(barQueryString);
+
+        expect(queryPrototypeStub).to.have.callCount(6);
+      });
+
+      it('should return the right categories', async () => {
+        const fooCategories = await queryRunner.query(fooQueryString);
+        const barCategories = await localQueryRunner.query(barQueryString);
+
+        expectSameDataByTenantId(barCategories, categories, barTenant);
+        expectSameDataByTenantId(fooCategories, categories, fooTenant);
+      });
+
+      it('should not have race conditions when first query takes longer', async () => {
+        let pending = true;
+
+        const fooCategoryQueryRunnerResolver = sinon.fake.resolves(
+          new Promise(resolve => {
+            return setTimeout(async () => {
+              resolve(
+                queryPrototypeStub.wrappedMethod.bind(queryRunner)(
+                  fooQueryString,
+                ),
+              );
+            }, 3000);
+          }),
+        );
+
+        // const barCategoryQueryRunnerResolver = sinon.fake.resolves(
+        //   new Promise(resolve => {
+        //     return setTimeout(async () => {
+        //       resolve(
+        //         queryPrototypeStub.wrappedMethod.bind(localQueryRunner)(
+        //           barCallQueryString,
+        //         ),
+        //       );
+        //     }, 1000);
+        //   }),
+        // );
+
+        queryPrototypeStub
+          .withArgs(fooQueryString)
+          .resolves(fooCategoryQueryRunnerResolver());
+        // queryPrototypeStub
+        //   .withArgs(barCallQueryString)
+        //   .resolves(barCategoryQueryRunnerResolver());
+
+        const fooTenantCategoryPromise = queryRunner.query(fooQueryString);
+        fooTenantCategoryPromise.finally(() => (pending = false));
+
+        // This should return first
+        // It will still be registered in stub
+        const barTenantCategoryResult = await localQueryRunner.query(
+          barQueryString,
+        );
+
+        expect(queryPrototypeStub).to.have.been.calledWith(barQueryString);
+        expectSameDataByTenantId(
+          barTenantCategoryResult,
+          categories,
+          barTenant,
+        );
+        expect(pending).to.be.true;
+
+        clock.tick(3000);
+        const fooTenantCategoryResult = await fooTenantCategoryPromise;
+
+        expect(pending).to.be.false;
+        expectSameDataByTenantId(
+          fooTenantCategoryResult,
+          categories,
+          fooTenant,
+        );
+
+        // The stub should have 6 calls in total
+        // 3 for each query
+        expect(queryPrototypeStub).to.have.callCount(6);
+      });
     });
   });
 });
+
+function expectSameDataByTenantId(
+  barCategories: any[],
+  categories: Category[],
+  barTenant: TenancyModelOptions,
+) {
+  expect(barCategories)
+    .to.have.lengthOf(1)
+    .and.to.be.deep.equal(
+      categories
+        .filter(c => c.tenantId === barTenant.tenantId)
+        .map(c => c.toJson()),
+    );
+}
 
 function runQueryTests(
   tenantModelOptions: TenancyModelOptions,
@@ -368,8 +481,8 @@ function runQueryTests(
 
   it('gets called 3 times on normal execution', async () => {
     await queryRunner.query('');
-    expect(queryPrototypeSpy.callCount).to.be.equal(3);
-    expect(querySpy.callCount).to.be.equal(1);
+    expect(queryPrototypeSpy).to.have.callCount(3);
+    expect(querySpy).to.have.callCount(1);
   });
 
   it('gets called with right query and no params', async () => {
@@ -471,12 +584,19 @@ async function setupMultiTenant(
     with check ("tenantId" = current_setting('settings.tenant_id')::int4 
           AND "userId" = current_setting('settings.actor_id')::int4  );`);
 
-  await queryRunner.query(`set role ${tenantDbUser}`);
+  await setQueryRunnerRole(queryRunner, tenantDbUser);
 
   return {
     categories: [fooCategory, barCategory],
     posts: [fooPost, foofooPost, barPost],
   };
+}
+
+async function setQueryRunnerRole(
+  queryRunner: RLSPostgresQueryRunner,
+  tenantDbUser: string,
+) {
+  await queryRunner.query(`set role ${tenantDbUser}`);
 }
 
 async function resetMultiTenant(
