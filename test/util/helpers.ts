@@ -146,43 +146,43 @@ export async function createData(
 ) {
   const categoryRepo = connection.getRepository(Category);
   const postRepo = connection.getRepository(Post);
-  const fooCategory = await categoryRepo
-    .create({
+  const fooCategory = Category.create(
+    await categoryRepo.save({
       name: 'FooCategory',
       tenantId: fooTenant.tenantId as number,
-    })
-    .save();
-  const barCategory = await categoryRepo
-    .create({
+    }),
+  );
+  const barCategory = Category.create(
+    await categoryRepo.save({
       name: 'BarCategory',
       tenantId: barTenant.tenantId as number,
-    })
-    .save();
+    }),
+  );
 
-  const fooPost = await postRepo
-    .create({
+  const fooPost = Post.create(
+    await postRepo.save({
       tenantId: fooTenant.tenantId as number,
       userId: fooTenant.actorId as number,
       title: 'Foo post',
       categories: [fooCategory],
-    })
-    .save();
-  const foofooPost = await postRepo
-    .create({
+    }),
+  );
+  const foofooPost = Post.create(
+    await postRepo.save({
       tenantId: fooTenant.tenantId as number,
       userId: (fooTenant.actorId as number) + 1,
       title: 'Foofoo post',
       categories: [fooCategory],
-    })
-    .save();
-  const barPost = await postRepo
-    .create({
+    }),
+  );
+  const barPost = Post.create(
+    await postRepo.save({
       tenantId: barTenant.tenantId as number,
       userId: barTenant.actorId as number,
       title: 'Bar post',
       categories: [barCategory],
-    })
-    .save();
+    }),
+  );
 
   return {
     categories: [fooCategory, barCategory],
@@ -227,10 +227,6 @@ export async function setupMultiTenant(
           AND "userId" = current_setting('rls.actor_id')::int4  )
     with check ("tenantId" = current_setting('rls.tenant_id')::int4 
           AND "userId" = current_setting('rls.actor_id')::int4  );`);
-
-  if (queryRunner instanceof RLSPostgresQueryRunner) {
-    await setQueryRunnerRole(queryRunner, tenantDbUser);
-  }
 }
 export async function setQueryRunnerRole(
   queryRunner: RLSPostgresQueryRunner | RLSConnection | Connection,
@@ -259,5 +255,10 @@ export async function resetMultiTenant(
     alter table public."post" disable row level security;
     alter table public."category" disable row level security;
   `);
-  // await queryRunner.query(`drop role if exists ${tenantDbUser}`);
+  await queryRunner.query(`drop role if exists ${tenantDbUser}`);
+
+  await queryRunner.query(
+    `grant all privileges on all tables in schema public to postgres;
+     grant all privileges on all sequences in schema public to postgres;`,
+  );
 }

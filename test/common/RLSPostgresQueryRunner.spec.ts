@@ -1,40 +1,35 @@
-import {
-  closeTestingConnections,
-  reloadTestingDatabases,
-  setupSingleTestingConnection,
-} from '../util/test-utils';
-import {
-  Connection,
-  createConnection,
-  getConnection,
-  QueryFailedError,
-} from 'typeorm';
+import { expect } from 'chai';
+import * as sinon from 'sinon';
+import { Connection, createConnection, QueryFailedError } from 'typeorm';
+import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import {
   RLSConnection,
   RLSPostgresDriver,
   RLSPostgresQueryRunner,
 } from '../../lib/common';
 import { TenancyModelOptions } from '../interfaces';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
-import { Post } from './entity/Post';
-import { Category } from './entity/Category';
 import {
-  runQueryTests,
-  setupMultiTenant,
-  resetMultiTenant,
-  setQueryRunnerRole,
-  expectSameDataByTenantId,
-  createRunners,
-  generateQueryStrings,
-  setupResolvers,
-  releaseRunners,
   createData,
+  createRunners,
   createTeantUser,
+  expectSameDataByTenantId,
+  generateQueryStrings,
+  releaseRunners,
+  resetMultiTenant,
+  runQueryTests,
+  setQueryRunnerRole,
+  setupMultiTenant,
+  setupResolvers,
 } from '../util/helpers';
+import {
+  closeTestingConnections,
+  reloadTestingDatabases,
+  setupSingleTestingConnection,
+} from '../util/test-utils';
+import { Category } from './entity/Category';
+import { Post } from './entity/Post';
 
-describe.only('RLSPostgresQueryRunner', () => {
+describe('RLSPostgresQueryRunner', () => {
   let connection: RLSConnection;
   let originalConnection: Connection;
   let migrationConnection: Connection;
@@ -78,6 +73,7 @@ describe.only('RLSPostgresQueryRunner', () => {
 
     originalConnection = await createConnection(connectionOptions);
     migrationConnection = await createConnection(migrationConnectionOptions);
+
     connection = new RLSConnection(originalConnection, fooTenant);
     driver = connection.driver;
   });
@@ -85,7 +81,7 @@ describe.only('RLSPostgresQueryRunner', () => {
     await reloadTestingDatabases([migrationConnection]);
     queryRunner = new RLSPostgresQueryRunner(driver, 'master', fooTenant);
   });
-  afterEach(async () => queryRunner.release());
+  afterEach(async () => await queryRunner.release());
   after(
     async () =>
       await closeTestingConnections([originalConnection, migrationConnection]),
@@ -140,14 +136,16 @@ describe.only('RLSPostgresQueryRunner', () => {
     });
   });
 
-  describe.only('multi-tenant', () => {
+  describe('multi-tenant', () => {
     const tenantDbUser = 'tenant_aware_user';
     let categories: Category[];
     let posts: Post[];
 
     beforeEach(async () => {
-      await createTeantUser(queryRunner, tenantDbUser);
-      await setupMultiTenant(queryRunner, tenantDbUser);
+      await createTeantUser(migrationConnection, tenantDbUser);
+      await setupMultiTenant(migrationConnection, tenantDbUser);
+
+      await setQueryRunnerRole(queryRunner, tenantDbUser);
 
       const testData = await createData(
         fooTenant,
@@ -158,7 +156,10 @@ describe.only('RLSPostgresQueryRunner', () => {
       categories = testData.categories;
       posts = testData.posts;
     });
-    afterEach(async () => await resetMultiTenant(queryRunner, tenantDbUser));
+
+    afterEach(async () => {
+      await resetMultiTenant(migrationConnection, tenantDbUser);
+    });
 
     describe('virtual connection', () => {
       it('should use the correct database user', async () => {
@@ -373,7 +374,7 @@ describe.only('RLSPostgresQueryRunner', () => {
       });
     });
 
-    describe.only('multiple-qr', () => {
+    describe('multiple-qr', () => {
       let localQueryRunner: RLSPostgresQueryRunner;
       let queryPrototypeStub: sinon.SinonStub;
       let clock: sinon.SinonFakeTimers;
@@ -465,9 +466,9 @@ describe.only('RLSPostgresQueryRunner', () => {
           fooTenant,
         );
 
-        // The stub should have 6 calls in total
-        // 3 for each query
-        expect(queryPrototypeStub).to.have.callCount(6);
+        // The stub should have 8 calls in total
+        // 4 for each query
+        expect(queryPrototypeStub).to.have.callCount(8);
       });
 
       it('should not have race conditions on multiple runners', async () => {
