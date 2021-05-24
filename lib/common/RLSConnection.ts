@@ -4,8 +4,8 @@ import {
   TenancyModelOptions,
   TenantId,
 } from '../interfaces/tenant-options.interface';
-import { Connection } from 'typeorm';
-import { RLSPostgresQueryRunner } from 'lib/common/RLSPostgresQueryRunner';
+import { Connection, EntityMetadata } from 'typeorm';
+import { RLSPostgresQueryRunner } from './RLSPostgresQueryRunner';
 
 export class RLSConnection extends Connection {
   readonly driver: RLSPostgresDriver;
@@ -22,6 +22,17 @@ export class RLSConnection extends Connection {
 
     this.tenantId = tenancyModelOptions.tenantId;
     this.actorId = tenancyModelOptions.actorId;
+
+    const metadatas = [];
+
+    this.entityMetadatas.forEach(em => {
+      const wrappedMetadata = Object.assign({}, EntityMetadata.prototype, em, {
+        connection: this,
+      });
+      metadatas.push(wrappedMetadata);
+    });
+
+    Object.assign(this, { entityMetadatas: metadatas });
 
     const driver = new RLSPostgresDriver(this, tenancyModelOptions);
 
