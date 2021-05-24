@@ -6,7 +6,7 @@ import {
 } from '../interfaces/tenant-options.interface';
 import { ReplicationMode } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
-import { RLSConnection } from 'lib/common/RLSConnection';
+import { RLSConnection } from './RLSConnection';
 
 export class RLSPostgresDriver extends PostgresDriver {
   tenantId: TenantId = null;

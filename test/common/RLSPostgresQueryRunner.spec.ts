@@ -3,7 +3,12 @@ import {
   reloadTestingDatabases,
   setupSingleTestingConnection,
 } from '../util/test-utils';
-import { Connection, createConnection, QueryFailedError } from 'typeorm';
+import {
+  Connection,
+  createConnection,
+  getConnection,
+  QueryFailedError,
+} from 'typeorm';
 import {
   RLSConnection,
   RLSPostgresDriver,
@@ -25,11 +30,14 @@ import {
   generateQueryStrings,
   setupResolvers,
   releaseRunners,
+  createData,
+  createTeantUser,
 } from '../util/helpers';
 
-describe('RLSPostgresQueryRunner', () => {
+describe.only('RLSPostgresQueryRunner', () => {
   let connection: RLSConnection;
   let originalConnection: Connection;
+  let migrationConnection: Connection;
   let driver: RLSPostgresDriver;
 
   let queryRunner: RLSPostgresQueryRunner;
@@ -51,16 +59,37 @@ describe('RLSPostgresQueryRunner', () => {
       schemaCreate: true,
     });
 
+    const migrationConnectionOptions = await setupSingleTestingConnection(
+      'postgres',
+      {
+        entities: [__dirname + '/entity/*{.js,.ts}'],
+      },
+      {
+        name: 'migrationConnection',
+        type: 'postgres',
+        host: 'localhost',
+        port: 5440,
+        username: 'postgres',
+        password: 'password',
+        database: 'postgres',
+        logging: false,
+      },
+    );
+
     originalConnection = await createConnection(connectionOptions);
+    migrationConnection = await createConnection(migrationConnectionOptions);
     connection = new RLSConnection(originalConnection, fooTenant);
     driver = connection.driver;
   });
   beforeEach(async () => {
-    await reloadTestingDatabases([connection]);
+    await reloadTestingDatabases([migrationConnection]);
     queryRunner = new RLSPostgresQueryRunner(driver, 'master', fooTenant);
   });
   afterEach(async () => queryRunner.release());
-  after(async () => await closeTestingConnections([originalConnection]));
+  after(
+    async () =>
+      await closeTestingConnections([originalConnection, migrationConnection]),
+  );
 
   it('should be instance of RLSPostgresQueryRunner', () => {
     expect(queryRunner).to.be.instanceOf(RLSPostgresQueryRunner);
@@ -111,26 +140,28 @@ describe('RLSPostgresQueryRunner', () => {
     });
   });
 
-  describe('multi-tenant', () => {
+  describe.only('multi-tenant', () => {
     const tenantDbUser = 'tenant_aware_user';
     let categories: Category[];
     let posts: Post[];
 
     beforeEach(async () => {
-      const testData = await setupMultiTenant(
-        queryRunner,
+      await createTeantUser(queryRunner, tenantDbUser);
+      await setupMultiTenant(queryRunner, tenantDbUser);
+
+      const testData = await createData(
         fooTenant,
         barTenant,
-        tenantDbUser,
+        migrationConnection,
       );
 
       categories = testData.categories;
       posts = testData.posts;
     });
-    afterEach(() => resetMultiTenant(queryRunner, tenantDbUser));
+    afterEach(async () => await resetMultiTenant(queryRunner, tenantDbUser));
 
     describe('virtual connection', () => {
-      it('should use the correct user', async () => {
+      it('should use the correct database user', async () => {
         const [result] = await queryRunner.query(
           `select current_user as "currentUser"`,
         );
@@ -140,7 +171,7 @@ describe('RLSPostgresQueryRunner', () => {
 
       it('should have the tenantId set', async () => {
         const [result] = await queryRunner.query(
-          `select current_setting('settings.tenant_id') as "tenantId"`,
+          `select current_setting('rls.tenant_id') as "tenantId"`,
         );
 
         expect(parseInt(result.tenantId)).to.be.equal(fooTenant.tenantId);
@@ -148,7 +179,7 @@ describe('RLSPostgresQueryRunner', () => {
 
       it('should have the actor_id set', async () => {
         const [result] = await queryRunner.query(
-          `select current_setting('settings.actor_id') as "actorId"`,
+          `select current_setting('rls.actor_id') as "actorId"`,
         );
 
         expect(parseInt(result.actorId)).to.be.equal(fooTenant.actorId);
@@ -280,22 +311,22 @@ describe('RLSPostgresQueryRunner', () => {
       it('should not have the tenantId set', async () => {
         return expect(
           originalConnection.query(
-            `select current_setting('settings.tenant_id') as "tenantId"`,
+            `select current_setting('rls.tenant_id') as "tenantId"`,
           ),
         ).to.be.rejectedWith(
           QueryFailedError,
-          /unrecognized configuration parameter "settings.tenant_id"/,
+          /unrecognized configuration parameter "rls.tenant_id"/,
         );
       });
 
       it('should not have the actorId set', async () => {
         return expect(
           originalConnection.query(
-            `select current_setting('settings.actor_id') as "actorId"`,
+            `select current_setting('rls.actor_id') as "actorId"`,
           ),
         ).to.be.rejectedWith(
           QueryFailedError,
-          /unrecognized configuration parameter "settings.actor_id"/,
+          /unrecognized configuration parameter "rls.actor_id"/,
         );
       });
 
@@ -342,7 +373,7 @@ describe('RLSPostgresQueryRunner', () => {
       });
     });
 
-    describe('multiple-qr', () => {
+    describe.only('multiple-qr', () => {
       let localQueryRunner: RLSPostgresQueryRunner;
       let queryPrototypeStub: sinon.SinonStub;
       let clock: sinon.SinonFakeTimers;
@@ -373,11 +404,11 @@ describe('RLSPostgresQueryRunner', () => {
         await localQueryRunner.release();
       });
 
-      it('should have 6 calls in total', async () => {
+      it('should have 8 calls in total', async () => {
         await queryRunner.query(fooQueryString);
         await localQueryRunner.query(barQueryString);
 
-        expect(queryPrototypeStub).to.have.callCount(6);
+        expect(queryPrototypeStub).to.have.callCount(8);
       });
 
       it('should return the right categories', async () => {
@@ -452,6 +483,7 @@ describe('RLSPostgresQueryRunner', () => {
 
         const createdRunners = await createRunners(
           // The first 2 queryRunners are already created
+          // queryRunner and localQueryRunner
           tenantsOrder.slice(2),
           tenantDbUser,
           driver,

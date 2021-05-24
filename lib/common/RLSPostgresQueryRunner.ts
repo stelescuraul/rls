@@ -26,13 +26,11 @@ export class RLSPostgresQueryRunner extends PostgresQueryRunner {
   }
 
   async query(queryString: string, params?: any[]): Promise<any> {
-    await super.query(
-      `select set_config('settings.tenant_id', '${this.tenantId}', false)`,
-    );
-    await super.query(
-      `select set_config('settings.actor_id', '${this.actorId}', false)`,
-    );
+    await super.query(`set "rls.tenant_id" = ${this.tenantId}`);
+    await super.query(`set "rls.actor_id" = ${this.actorId}`);
 
-    return await super.query(queryString, params);
+    const result = await super.query(queryString, params);
+    await super.query(`reset rls.actor_id; reset rls.tenant_id`);
+    return result;
   }
 }

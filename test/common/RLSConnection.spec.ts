@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { Connection, createConnection } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { RLSConnection, RLSPostgresQueryRunner } from '../../lib/common';
-import { TenancyModelOptions } from '../interfaces';
+import { TenancyModelOptions } from 'lib/interfaces';
 import {
   closeTestingConnections,
   reloadTestingDatabases,
@@ -75,13 +75,16 @@ describe('RLSConnection', () => {
       'namingStrategy',
       'migrations',
       'subscribers',
-      'entityMetadatas',
       'queryResultCache',
       'relationLoader',
       'relationIdLoader',
     ];
     for (const key of keys) {
       expect(connection).to.have.property(key, originalConnection[key]);
+    }
+    expect(connection).to.have.property('entityMetadatas');
+    for (const entityMedata of connection.entityMetadatas) {
+      expect(entityMedata).to.have.property('connection', connection);
     }
   });
 
