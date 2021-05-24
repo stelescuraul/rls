@@ -156,18 +156,24 @@ export interface TestingOptions {
 export function setupSingleTestingConnection(
   driverType: DatabaseType,
   options: TestingOptions,
+  typeormConfig?: TestingConnectionOptions,
 ): ConnectionOptions | undefined {
-  const testingConnections = setupTestingConnections({
-    name: options.name ? options.name : undefined,
-    entities: options.entities ? options.entities : [],
-    subscribers: options.subscribers ? options.subscribers : [],
-    dropSchema: options.dropSchema ? options.dropSchema : false,
-    schemaCreate: options.schemaCreate ? options.schemaCreate : false,
-    enabledDrivers: [driverType],
-    cache: options.cache,
-    schema: options.schema ? options.schema : undefined,
-    namingStrategy: options.namingStrategy ? options.namingStrategy : undefined,
-  });
+  const testingConnections = setupTestingConnections(
+    {
+      name: options.name ? options.name : undefined,
+      entities: options.entities ? options.entities : [],
+      subscribers: options.subscribers ? options.subscribers : [],
+      dropSchema: options.dropSchema ? options.dropSchema : false,
+      schemaCreate: options.schemaCreate ? options.schemaCreate : false,
+      enabledDrivers: [driverType],
+      cache: options.cache,
+      schema: options.schema ? options.schema : undefined,
+      namingStrategy: options.namingStrategy
+        ? options.namingStrategy
+        : undefined,
+    },
+    typeormConfig ? [typeormConfig] : undefined,
+  );
   if (!testingConnections.length) return undefined;
 
   return testingConnections[0];
@@ -198,8 +204,11 @@ export function getTypeOrmConfig(): TestingConnectionOptions[] {
  */
 export function setupTestingConnections(
   options?: TestingOptions,
+  typeormConfigs?: TestingConnectionOptions[],
 ): ConnectionOptions[] {
-  const ormConfigConnectionOptionsArray = getTypeOrmConfig();
+  const ormConfigConnectionOptionsArray = typeormConfigs
+    ? typeormConfigs
+    : getTypeOrmConfig();
 
   if (!ormConfigConnectionOptionsArray.length)
     throw new Error(
@@ -208,7 +217,8 @@ export function setupTestingConnections(
 
   return ormConfigConnectionOptionsArray
     .filter(connectionOptions => {
-      if (connectionOptions.skip === true) return false;
+      if (connectionOptions.skip && connectionOptions.skip === true)
+        return false;
 
       if (options && options.enabledDrivers && options.enabledDrivers.length)
         return options.enabledDrivers.indexOf(connectionOptions.type!) !== -1; // ! is temporary
@@ -260,8 +270,11 @@ export function setupTestingConnections(
  */
 export async function createTestingConnections(
   options?: TestingOptions,
+  typeormConfigs?: TestingConnectionOptions[],
 ): Promise<Connection[]> {
-  const connections = await createConnections(setupTestingConnections(options));
+  const connections = await createConnections(
+    setupTestingConnections(options, typeormConfigs),
+  );
   await Promise.all(
     connections.map(async connection => {
       // create new databases
