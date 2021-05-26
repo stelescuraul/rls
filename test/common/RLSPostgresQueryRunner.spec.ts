@@ -12,7 +12,7 @@ import {
   createData,
   createRunners,
   createTeantUser,
-  expectSameDataByTenantId,
+  expectSameCategoryByTenantId,
   generateQueryStrings,
   releaseRunners,
   resetMultiTenant,
@@ -416,8 +416,8 @@ describe('RLSPostgresQueryRunner', () => {
         const fooCategories = await queryRunner.query(fooQueryString);
         const barCategories = await localQueryRunner.query(barQueryString);
 
-        expectSameDataByTenantId(barCategories, categories, barTenant);
-        expectSameDataByTenantId(fooCategories, categories, fooTenant);
+        expectSameCategoryByTenantId(barCategories, categories, barTenant);
+        expectSameCategoryByTenantId(fooCategories, categories, fooTenant);
       });
 
       it('should not have race conditions when first query takes longer', async () => {
@@ -449,7 +449,7 @@ describe('RLSPostgresQueryRunner', () => {
         );
 
         expect(queryPrototypeStub).to.have.been.calledWith(barQueryString);
-        expectSameDataByTenantId(
+        expectSameCategoryByTenantId(
           barTenantCategoryResult,
           categories,
           barTenant,
@@ -460,7 +460,7 @@ describe('RLSPostgresQueryRunner', () => {
         const fooTenantCategoryResult = await fooTenantCategoryPromise;
 
         expect(pending).to.be.false;
-        expectSameDataByTenantId(
+        expectSameCategoryByTenantId(
           fooTenantCategoryResult,
           categories,
           fooTenant,
@@ -508,7 +508,7 @@ describe('RLSPostgresQueryRunner', () => {
 
         await Promise.all(queryPromises).then(results => {
           results.forEach((result, indx) => {
-            expectSameDataByTenantId(result, categories, tenantsOrder[indx]);
+            expectSameCategoryByTenantId(result, categories, tenantsOrder[indx]);
           });
         });
 

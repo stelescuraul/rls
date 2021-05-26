@@ -63,16 +63,16 @@ export async function setupResolvers(
     queryPrototypeStub.withArgs(queryStrings[i]).resolves(resolver());
   }
 }
-export function expectSameDataByTenantId(
-  barCategories: any[],
+export function expectSameCategoryByTenantId(
+  returnedCategories: any[],
   categories: Category[],
-  barTenant: TenancyModelOptions,
+  tenant: TenancyModelOptions,
 ) {
-  expect(barCategories)
+  expect(returnedCategories)
     .to.have.lengthOf(1)
     .and.to.be.deep.equal(
       categories
-        .filter(c => c.tenantId === barTenant.tenantId)
+        .filter(c => c.tenantId === tenant.tenantId)
         .map(c => c.toJson()),
     );
 }
@@ -138,6 +138,38 @@ export function runQueryTests(
   it('does not add ghost query runners to the driver', () => {
     expect(queryRunner.driver.connectedQueryRunners).to.have.lengthOf(0);
   });
+}
+export function expectTenantData(
+  expectQuery: Chai.Assertion,
+  data: (Post | Category)[],
+  total: number,
+  tenant: TenancyModelOptions,
+) {
+  return expectQuery.to.have.lengthOf(total).and.to.deep.equal(
+    data.filter(x => {
+      if (x instanceof Post) {
+        return x.tenantId === tenant.tenantId && x.userId === tenant.actorId;
+      } else {
+        return x.tenantId === tenant.tenantId;
+      }
+    }),
+  );
+}
+export function expectTenantDataEventually(
+  expectQuery: Chai.Assertion,
+  data: (Post | Category)[],
+  total: number,
+  tenant: TenancyModelOptions,
+) {
+  return expectQuery.to.eventually.have.lengthOf(total).and.to.deep.equal(
+    data.filter(x => {
+      if (x instanceof Post) {
+        return x.tenantId === tenant.tenantId && x.userId === tenant.actorId;
+      } else {
+        return x.tenantId === tenant.tenantId;
+      }
+    }),
+  );
 }
 export async function createData(
   fooTenant: TenancyModelOptions,

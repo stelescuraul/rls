@@ -22,7 +22,7 @@ export class Post extends BaseEntity {
   @Column()
   title: string;
 
-  @ManyToMany(() => Category)
+  @ManyToMany(() => Category, { eager: true })
   @JoinTable()
   categories: Category[];
 
