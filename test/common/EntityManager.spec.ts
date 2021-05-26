@@ -233,4 +233,55 @@ describe('EntityManager', function () {
       expect(allTimeMaxQueryRunners).to.be.equal(10);
     });
   });
+
+  describe('transaction', () => {
+    it('should apply RLS to transaction', async () => {
+      const fooEntityManager = fooConnection.createEntityManager();
+      const barEntityManager = barConnection.createEntityManager();
+
+      await fooEntityManager.transaction(async tem => {
+        await expectTenantDataEventually(
+          expect(tem.find(Category)),
+          categories,
+          1,
+          fooTenant,
+        );
+      });
+
+      await barEntityManager.transaction(async tem => {
+        await expectTenantDataEventually(
+          expect(tem.find(Category)),
+          categories,
+          1,
+          barTenant,
+        );
+      });
+    });
+
+    it('should apply RLS to parallel transactions', async () => {
+      const fooEntityManager = fooConnection.createEntityManager();
+      const barEntityManager = barConnection.createEntityManager();
+
+      const fooProm = fooEntityManager.transaction(async tem => {
+        await expectTenantDataEventually(
+          expect(tem.find(Category)),
+          categories,
+          1,
+          fooTenant,
+        );
+      });
+
+      const barProm = barEntityManager.transaction(
+        async tem =>
+          await expectTenantDataEventually(
+            expect(tem.find(Category)),
+            categories,
+            1,
+            barTenant,
+          ),
+      );
+
+      return Promise.all([fooProm, barProm]);
+    });
+  });
 });
