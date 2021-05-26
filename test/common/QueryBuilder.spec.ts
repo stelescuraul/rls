@@ -21,7 +21,7 @@ import {
 import { Category } from './entity/Category';
 import { Post } from './entity/Post';
 
-describe.only('QueryBuilder', function () {
+describe('QueryBuilder', function () {
   const tenantDbUser = 'tenant_aware_user';
   let fooConnection: RLSConnection;
   let barConnection: RLSConnection;
