@@ -22,7 +22,7 @@ import {
 import { Connection, createConnection } from 'typeorm';
 const configs = getTypeOrmConfig();
 
-describe.only('RLS Module', () => {
+describe('RLS Module', () => {
   let app: INestApplication;
   const tenantDbUser = 'tenant_aware_user';
   let migrationConnection: Connection;
