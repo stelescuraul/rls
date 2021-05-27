@@ -150,15 +150,18 @@ export function expectTenantData(
   data: (Post | Category)[],
   total: number,
   tenant: TenancyModelOptions,
+  toJson = false,
 ) {
   return expectQuery.to.have.lengthOf(total).and.to.deep.equal(
-    data.filter(x => {
-      if (x instanceof Post) {
-        return x.tenantId === tenant.tenantId && x.userId === tenant.actorId;
-      } else {
-        return x.tenantId === tenant.tenantId;
-      }
-    }),
+    data
+      .filter(x => {
+        if (x instanceof Post) {
+          return x.tenantId === tenant.tenantId && x.userId === tenant.actorId;
+        } else {
+          return x.tenantId === tenant.tenantId;
+        }
+      })
+      .map(x => (toJson ? x.toJson() : x)),
   );
 }
 export function expectTenantDataEventually(

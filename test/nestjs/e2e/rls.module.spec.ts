@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { expect } from 'chai';
 import { TenancyModelOptions } from 'lib/interfaces';
 import * as request from 'supertest';
 import { AppModule } from 'test/nestjs/src/app.module';
@@ -8,6 +9,7 @@ import { Post } from 'test/util/entity/Post';
 import {
   createData,
   createTeantUser,
+  expectTenantData,
   resetMultiTenant,
   setupMultiTenant,
 } from 'test/util/helpers';
@@ -20,7 +22,7 @@ import {
 import { Connection, createConnection } from 'typeorm';
 const configs = getTypeOrmConfig();
 
-describe('RLS Module', () => {
+describe.only('RLS Module', () => {
   let app: INestApplication;
   const tenantDbUser = 'tenant_aware_user';
   let migrationConnection: Connection;
@@ -73,7 +75,7 @@ describe('RLS Module', () => {
     return getAuthRequest(app, 'get', '/categories', fooTenant)
       .expect(200)
       .expect(res => {
-        console.log(res.body);
+        expectTenantData(expect(res.body), categories, 1, fooTenant, true);
       });
   });
 });
