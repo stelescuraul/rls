@@ -26,6 +26,7 @@
   "devDependencies": {
     "@commitlint/cli": "^12.1.1",
     "@commitlint/config-conventional": "^12.1.1",
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@nestjs/common": "^7.6.15",
     "@nestjs/core": "^7.6.15",
     "@nestjs/typeorm": "^7.1.5",
@@ -72,17 +73,13 @@
     "registry": "https://npm.pkg.github.com"
   },
   "nyc": {
+    "extends": "@istanbuljs/nyc-config-typescript",
     "extension": [
       ".ts"
     ],
     "exclude": [
-      "**/*.d.ts",
-      "**/Dockerfile",
-      "**/docker-compose.yml",
       "lib/interfaces/**/*",
-      "lib/**/*.constants.ts",
-      "test/**/*",
-      "dist/**/*"
+      "lib/**/*.constants.ts"
     ],
     "include": [
       "lib/*",
