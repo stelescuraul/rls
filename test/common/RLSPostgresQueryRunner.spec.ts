@@ -32,8 +32,8 @@ import {
   reloadTestingDatabases,
   setupSingleTestingConnection,
 } from '../util/test-utils';
-import { Category } from './entity/Category';
-import { Post } from './entity/Post';
+import { Category } from '../util/entity/Category';
+import { Post } from '../util/entity/Post';
 const configs = getTypeOrmConfig();
 
 describe('RLSPostgresQueryRunner', () => {
@@ -56,7 +56,7 @@ describe('RLSPostgresQueryRunner', () => {
 
   before(async () => {
     const connectionOptions = await setupSingleTestingConnection('postgres', {
-      entities: [__dirname + '/entity/*{.js,.ts}'],
+      entities: [Post, Category],
       dropSchema: true,
       schemaCreate: true,
     });
@@ -64,7 +64,7 @@ describe('RLSPostgresQueryRunner', () => {
     const migrationConnectionOptions = await setupSingleTestingConnection(
       'postgres',
       {
-        entities: [__dirname + '/entity/*{.js,.ts}'],
+        entities: [Post, Category],
       },
       {
         ...configs[0],

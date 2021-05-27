@@ -8,8 +8,8 @@ import { TenancyModelOptions } from '../interfaces';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
-import { Post } from '../common/entity/Post';
-import { Category } from '../common/entity/Category';
+import { Post } from './entity/Post';
+import { Category } from './entity/Category';
 
 export async function createRunners(
   tenantOrder: TenancyModelOptions[],
@@ -104,15 +104,13 @@ export function runQueryTests(
   it('gets called with right query and no params', async () => {
     await queryRunner.query(`select 'foo'`);
 
-    expect(queryPrototypeSpy.getCall(2)).to.have.been.calledWith(
-      `select 'foo'`,
-    );
+    expect(queryPrototypeSpy.thirdCall).to.have.been.calledWith(`select 'foo'`);
   });
 
   it('gets called with right query and params', async () => {
     await queryRunner.query(`select $1`, ['foo']);
 
-    expect(queryPrototypeSpy.getCall(2)).to.have.been.calledWith('select $1', [
+    expect(queryPrototypeSpy.thirdCall).to.have.been.calledWith('select $1', [
       'foo',
     ]);
   });
@@ -120,7 +118,7 @@ export function runQueryTests(
   it('gets called with right tenantId', async () => {
     await queryRunner.query(`select 'foo'`);
 
-    expect(queryPrototypeSpy.getCall(0)).to.have.been.calledWith(
+    expect(queryPrototypeSpy.firstCall).to.have.been.calledWith(
       // `select set_config('rls.tenant_id', '${tenantModelOptions.tenantId}', false)`,
       `set "rls.tenant_id" = ${tenantModelOptions.tenantId}`,
     );
@@ -129,9 +127,17 @@ export function runQueryTests(
   it('gets called with right actorId', async () => {
     await queryRunner.query(`select 'foo'`);
 
-    expect(queryPrototypeSpy.getCall(1)).to.have.been.calledWith(
+    expect(queryPrototypeSpy.secondCall).to.have.been.calledWith(
       // `select set_config('rls.actor_id', '${tenantModelOptions.actorId}', false)`,
       `set "rls.actor_id" = ${tenantModelOptions.actorId}`,
+    );
+  });
+
+  it('resets actor and tenant after query', async () => {
+    await queryRunner.query(`select 'foo'`);
+
+    expect(queryPrototypeSpy.lastCall).to.have.been.calledWith(
+      `reset rls.actor_id; reset rls.tenant_id;`,
     );
   });
 
@@ -178,47 +184,43 @@ export async function createData(
 ) {
   const categoryRepo = connection.getRepository(Category);
   const postRepo = connection.getRepository(Post);
-  const fooCategory = Category.create(
-    await categoryRepo.save({
-      name: 'FooCategory',
-      tenantId: fooTenant.tenantId as number,
-    }),
-  );
-  const barCategory = Category.create(
-    await categoryRepo.save({
-      name: 'BarCategory',
-      tenantId: barTenant.tenantId as number,
-    }),
-  );
 
-  const fooPost = Post.create(
-    await postRepo.save({
-      tenantId: fooTenant.tenantId as number,
-      userId: fooTenant.actorId as number,
-      title: 'Foo post',
-      categories: [fooCategory],
-    }),
-  );
-  const foofooPost = Post.create(
-    await postRepo.save({
-      tenantId: fooTenant.tenantId as number,
-      userId: (fooTenant.actorId as number) + 1,
-      title: 'Foofoo post',
-      categories: [fooCategory],
-    }),
-  );
-  const barPost = Post.create(
-    await postRepo.save({
-      tenantId: barTenant.tenantId as number,
-      userId: barTenant.actorId as number,
-      title: 'Bar post',
-      categories: [barCategory],
-    }),
-  );
+  await categoryRepo.save({
+    name: 'FooCategory',
+    tenantId: fooTenant.tenantId as number,
+  });
+  await categoryRepo.save({
+    name: 'BarCategory',
+    tenantId: barTenant.tenantId as number,
+  });
+
+  const fooCategory = await categoryRepo.findOne({ name: 'FooCategory' });
+  const barCategory = await categoryRepo.findOne({ name: 'BarCategory' });
+
+  await postRepo.save({
+    tenantId: fooTenant.tenantId as number,
+    userId: fooTenant.actorId as number,
+    title: 'Foo post',
+    categories: [fooCategory],
+  });
+  await postRepo.save({
+    tenantId: fooTenant.tenantId as number,
+    userId: (fooTenant.actorId as number) + 1,
+    title: 'Foofoo post',
+    categories: [fooCategory],
+  });
+  await postRepo.save({
+    tenantId: barTenant.tenantId as number,
+    userId: barTenant.actorId as number,
+    title: 'Bar post',
+    categories: [barCategory],
+  });
+
+  const posts = await postRepo.find();
 
   return {
     categories: [fooCategory, barCategory],
-    posts: [fooPost, foofooPost, barPost],
+    posts,
   };
 }
 export async function createTeantUser(

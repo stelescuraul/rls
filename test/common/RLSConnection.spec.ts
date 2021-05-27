@@ -8,7 +8,8 @@ import {
   reloadTestingDatabases,
   setupSingleTestingConnection,
 } from '../util/test-utils';
-import { Post } from './entity/Post';
+import { Post } from '../util/entity/Post';
+import { Category } from 'test/util/entity/Category';
 
 describe('RLSConnection', () => {
   let connection: RLSConnection;
@@ -20,8 +21,8 @@ describe('RLSConnection', () => {
   };
 
   before(async () => {
-    const connectionOptions = await setupSingleTestingConnection('postgres', {
-      entities: [__dirname + '/entity/*{.js,.ts}'],
+    const connectionOptions = setupSingleTestingConnection('postgres', {
+      entities: [Post, Category],
       dropSchema: true,
       schemaCreate: true,
     });

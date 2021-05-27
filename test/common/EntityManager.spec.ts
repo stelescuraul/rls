@@ -19,8 +19,8 @@ import {
   reloadTestingDatabases,
   setupSingleTestingConnection,
 } from '../util/test-utils';
-import { Category } from './entity/Category';
-import { Post } from './entity/Post';
+import { Category } from '../util/entity/Category';
+import { Post } from '../util/entity/Post';
 
 const configs = getTypeOrmConfig();
 
@@ -47,7 +47,7 @@ describe('EntityManager', function () {
     const migrationConnectionOptions = await setupSingleTestingConnection(
       'postgres',
       {
-        entities: [__dirname + '/entity/*{.js,.ts}'],
+        entities: [Post, Category],
         dropSchema: true,
         schemaCreate: true,
       },
@@ -55,7 +55,7 @@ describe('EntityManager', function () {
     const tenantAwareConnectionOptions = await setupSingleTestingConnection(
       'postgres',
       {
-        entities: [__dirname + '/entity/*{.js,.ts}'],
+        entities: [Post, Category],
       },
       {
         ...configs[0],

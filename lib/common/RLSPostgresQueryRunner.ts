@@ -30,7 +30,7 @@ export class RLSPostgresQueryRunner extends PostgresQueryRunner {
     await super.query(`set "rls.actor_id" = ${this.actorId}`);
 
     const result = await super.query(queryString, params);
-    await super.query(`reset rls.actor_id; reset rls.tenant_id`);
+    await super.query(`reset rls.actor_id; reset rls.tenant_id;`);
     return result;
   }
 }
