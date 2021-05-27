@@ -1,6 +1,11 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Connection, createConnection, QueryFailedError } from 'typeorm';
+import {
+  Connection,
+  ConnectionOptions,
+  createConnection,
+  QueryFailedError,
+} from 'typeorm';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import {
   RLSConnection,
@@ -23,11 +28,13 @@ import {
 } from '../util/helpers';
 import {
   closeTestingConnections,
+  getTypeOrmConfig,
   reloadTestingDatabases,
   setupSingleTestingConnection,
 } from '../util/test-utils';
 import { Category } from './entity/Category';
 import { Post } from './entity/Post';
+const configs = getTypeOrmConfig();
 
 describe('RLSPostgresQueryRunner', () => {
   let connection: RLSConnection;
@@ -60,15 +67,9 @@ describe('RLSPostgresQueryRunner', () => {
         entities: [__dirname + '/entity/*{.js,.ts}'],
       },
       {
+        ...configs[0],
         name: 'migrationConnection',
-        type: 'postgres',
-        host: 'localhost',
-        port: 5440,
-        username: 'postgres',
-        password: 'password',
-        database: 'postgres',
-        logging: false,
-      },
+      } as ConnectionOptions,
     );
 
     originalConnection = await createConnection(connectionOptions);
@@ -508,7 +509,11 @@ describe('RLSPostgresQueryRunner', () => {
 
         await Promise.all(queryPromises).then(results => {
           results.forEach((result, indx) => {
-            expectSameCategoryByTenantId(result, categories, tenantsOrder[indx]);
+            expectSameCategoryByTenantId(
+              result,
+              categories,
+              tenantsOrder[indx],
+            );
           });
         });
 

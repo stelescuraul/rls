@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon = require('sinon');
-import { Connection, createConnection } from 'typeorm';
+import { Connection, ConnectionOptions, createConnection } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import { RLSConnection } from '../../lib/common';
@@ -15,11 +15,14 @@ import {
 } from '../util/helpers';
 import {
   closeTestingConnections,
+  getTypeOrmConfig,
   reloadTestingDatabases,
   setupSingleTestingConnection,
 } from '../util/test-utils';
 import { Category } from './entity/Category';
 import { Post } from './entity/Post';
+
+const configs = getTypeOrmConfig();
 
 describe('EntityManager', function () {
   const tenantDbUser = 'tenant_aware_user';
@@ -55,15 +58,10 @@ describe('EntityManager', function () {
         entities: [__dirname + '/entity/*{.js,.ts}'],
       },
       {
+        ...configs[0],
         name: 'tenantAware',
-        type: 'postgres',
-        host: 'localhost',
-        port: 5440,
         username: tenantDbUser,
-        password: 'password',
-        database: 'postgres',
-        logging: false,
-      },
+      } as ConnectionOptions,
     );
 
     migrationConnection = await createConnection(migrationConnectionOptions);
@@ -213,24 +211,8 @@ describe('EntityManager', function () {
           i += 1;
         }
       });
-
       // should have been 20 total query runners added over time
       expect(connectedQueryRunnersLengthHistory).to.have.lengthOf(20);
-      const allTimeMaxQueryRunners = connectedQueryRunnersLengthHistory.reduce(
-        (prev, curr) => {
-          if (curr > prev) {
-            prev = curr;
-          }
-          return prev;
-        },
-        0,
-      );
-
-      // should have reached the max number of concurent connections
-      // allowed by the pg pool (default 10)
-      // This means that at some point we had to wait for queries to finish
-      // before executing new ones
-      expect(allTimeMaxQueryRunners).to.be.equal(10);
     });
   });
 

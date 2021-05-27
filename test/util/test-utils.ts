@@ -1,6 +1,7 @@
 /**
  * File copied from https://github.com/typeorm/typeorm/blob/master/test/utils/test-utils.ts
  * It is created by TypeORM team but it is not exposed when published
+ * Slightly modified for convenience
  */
 import {
   ConnectionOptions,
@@ -13,6 +14,7 @@ import {
 } from 'typeorm';
 import { QueryResultCache } from 'typeorm/cache/QueryResultCache';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
+import { configs } from '../../ormconfig';
 
 /**
  * Interface in which data is stored in ormconfig.json of the project.
@@ -183,19 +185,7 @@ export function setupSingleTestingConnection(
  * Loads test connection options from ormconfig.json file.
  */
 export function getTypeOrmConfig(): TestingConnectionOptions[] {
-  try {
-    try {
-      return require(__dirname + '/../../../../ormconfig.json');
-    } catch (err) {
-      return require(__dirname + '/../../ormconfig.json');
-    }
-  } catch (err) {
-    throw new Error(
-      `Cannot find ormconfig.json file in the root of the project. To run tests please create ormconfig.json file` +
-        ` in the root of the project (near ormconfig.json.dist, you need to copy ormconfig.json.dist into ormconfig.json` +
-        ` and change all database settings to match your local environment settings).`,
-    );
-  }
+  return configs;
 }
 
 /**

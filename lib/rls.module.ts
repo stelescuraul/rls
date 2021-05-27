@@ -34,14 +34,14 @@ export class RLSModule {
   static forRoot(
     // eslint-disable-next-line @typescript-eslint/ban-types
     injectServices: (string | symbol | Function | Type<any> | Abstract<any>)[],
-    isolationExtractorFactory: (request, ...args) => TenancyModelOptions,
+    extractTenant: (request, ...args) => TenancyModelOptions,
   ): DynamicModule {
     const rlsProvider: Provider = {
       provide: TENANT_CONNECTION,
       inject: [REQUEST, Connection, ...injectServices],
       scope: Scope.REQUEST,
       useFactory: (request: Request, connection: Connection, ...args) => {
-        const tenantModelOptions: TenancyModelOptions = isolationExtractorFactory(
+        const tenantModelOptions: TenancyModelOptions = extractTenant(
           request,
           ...args,
         );

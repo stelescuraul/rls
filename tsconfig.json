@@ -26,7 +26,7 @@
     "utils/**/*.ts",
     "test/**/*.ts",
     "lib/**/*.ts",
-    "ormconfig.json",
-    "openCoverageReport.ts"
+    "openCoverageReport.ts",
+    "ormconfig.ts"
   ]
 }
