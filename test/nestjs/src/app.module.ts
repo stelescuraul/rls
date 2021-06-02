@@ -17,7 +17,7 @@ const configs = getTypeOrmConfig();
       ...configs[0],
       username: 'tenant_aware_user',
       entities: [Post, Category],
-      logging: true,
+      logging: false,
     } as ConnectionOptions),
     RLSModule.forRoot([], (req: Request) => {
       const tenantId = req.headers['tenant_id'] as string;
