@@ -14,9 +14,7 @@
     "baseUrl": ".",
     "paths": {
       "lib/*": ["lib/*"],
-      "test/*": ["test/*"],
-      "typeorm": ["node_modules/typeorm/build/compiled/src"],
-      "typeorm/*": ["node_modules/typeorm/build/compiled/src/*"]
+      "test/*": ["test/*"]
     },
     "rootDirs": ["lib", "test"],
     "moduleResolution": "node"
