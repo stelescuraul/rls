@@ -49,6 +49,7 @@ export async function setupResolvers(
     throw new Error('Runners and query strings should be equal');
   }
 
+  const max = runners.length * 1000;
   for (let i = 0; i < runners.length; i++) {
     const resolver = sinon.fake.resolves(
       new Promise(resolve => {
@@ -56,7 +57,8 @@ export async function setupResolvers(
           resolve(
             queryPrototypeStub.wrappedMethod.bind(runners[i])(queryStrings[i]),
           );
-        }, i * 1000 + 1000);
+          // Randomly timeout between 0 and 1000ms per runner
+        }, Math.floor(Math.random() * (max - 1000)));
       }),
     );
 
