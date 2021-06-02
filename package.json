@@ -4,7 +4,7 @@
   "description": "Row level security package for TypeORM and NestJS",
   "scripts": {
     "test": "docker-compose -f test/docker-compose.yml run --rm rls-test && npm run postgres:down",
-    "test:mocha": "mocha -r ts-node/register -r tsconfig-paths/register --file ./test/util/test-setup.ts --bail --recursive --timeout 2000 ./test/**/*{.spec.ts,.*.spec.ts}",
+    "test:mocha": "mocha -r ts-node/register -r tsconfig-paths/register --file ./test/util/test-setup.ts --bail --exit --recursive --timeout 2000 ./test/**/*{.spec.ts,.*.spec.ts}",
     "lint": "eslint \"{src,apps,lib,test}/**/*.ts\"",
     "postgres:up": "docker-compose -f test/docker-compose.yml up -d postgres",
     "postgres:down": "docker-compose -f test/docker-compose.yml down",

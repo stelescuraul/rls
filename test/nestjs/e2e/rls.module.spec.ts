@@ -33,7 +33,6 @@ describe('RLS Module', () => {
   const tenantDbUser = 'tenant_aware_user';
   let migrationConnection: Connection;
   let categories: Category[];
-  let posts: Post[];
   let moduleRef: TestingModule;
 
   const fooTenant: TenancyModelOptions = {
@@ -57,7 +56,6 @@ describe('RLS Module', () => {
       migrationConnection,
     );
     categories = testData.categories;
-    posts = testData.posts;
 
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],
