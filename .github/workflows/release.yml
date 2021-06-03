@@ -1,3 +1,5 @@
+name: Release
+
 on:
   workflow_run:
     workflows: ["Build And Test"]
@@ -18,6 +20,11 @@ jobs:
     - name: Release
       run: npx semantic-release
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SLACK_WEBHOOK: ${{ secrets.SLACK_SEMANTIC_RELEASE_WEBHOOK }}
+    - name: Set npm registry to npm
+      run: npm config set @avallone-io:registry https://registry.npmjs.org
+    - name: Npm registry authentication
+      run: npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
+    - name: Release to NPM
+      run: npm publish --access public
