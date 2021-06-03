@@ -1,3 +1,12 @@
+## [1.0.1](https://github.com/Avallone-io/rls/compare/v1.0.0...v1.0.1) (2021-06-03)
+
+
+### Bug Fixes
+
+* release to npm after changelog ([88b5a7d](https://github.com/Avallone-io/rls/commit/88b5a7d5d4671f24daed71b60749989406baa2b8))
+* trigger license release ([071cfed](https://github.com/Avallone-io/rls/commit/071cfed7e013af83010b8b622956c29d0e6bf6ff))
+* update pipeline ([8e4ae81](https://github.com/Avallone-io/rls/commit/8e4ae81a01a0b7b03b81d787f6df6c53e55a7793))
+
 # 1.0.0 (2021-06-03)
 
 
