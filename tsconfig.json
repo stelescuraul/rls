@@ -1,32 +1,30 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "lib": [
-      "es2019"
-    ],
+    "lib": ["es2019"],
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "resolveJsonModule": true,
     "target": "es2017",
     "sourceMap": true,
     "outDir": "./dist",
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "src/*": [
-        "src/*"
-      ]
+      "lib/*": ["lib/*"],
+      "test/*": ["test/*"]
     },
-    "rootDirs": [
-      "src"
-    ],
+    "rootDirs": ["lib", "test"],
     "moduleResolution": "node"
   },
   "include": [
     "src/**/*.ts",
     "utils/**/*.ts",
     "test/**/*.ts",
-    "lib/**/*.ts"
+    "lib/**/*.ts",
+    "openCoverageReport.ts",
+    "ormconfig.ts"
   ]
 }
