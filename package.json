@@ -1,6 +1,6 @@
 {
   "name": "@avallone-io/rls",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Row level security package for TypeORM and NestJS",
   "scripts": {
     "test": "docker-compose -f test/docker-compose.yml run --rm rls-test && npm run postgres:down",
