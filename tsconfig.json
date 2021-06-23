@@ -19,5 +19,5 @@
     "rootDirs": ["lib", "test"],
     "moduleResolution": "node"
   },
-  "include": ["lib/**/*.ts"]
+  "include": ["lib/**/*.ts", "test/**/*"]
 }
