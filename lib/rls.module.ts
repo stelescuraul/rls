@@ -1,6 +1,7 @@
 import {
   Abstract,
   DynamicModule,
+  Global,
   Module,
   Provider,
   Scope,
@@ -15,6 +16,7 @@ import { TENANT_CONNECTION } from './rls.constants';
 import { createTypeormRLSProviders } from './rls.provider';
 import { Connection, ConnectionOptions } from 'typeorm';
 
+@Global()
 @Module({
   providers: [
     {

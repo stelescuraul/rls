@@ -19,12 +19,5 @@
     "rootDirs": ["lib", "test"],
     "moduleResolution": "node"
   },
-  "include": [
-    "src/**/*.ts",
-    "utils/**/*.ts",
-    "test/**/*.ts",
-    "lib/**/*.ts",
-    "openCoverageReport.ts",
-    "ormconfig.ts"
-  ]
+  "include": ["lib/**/*.ts", "test/**/*"]
 }
