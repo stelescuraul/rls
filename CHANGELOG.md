@@ -1,3 +1,14 @@
+## [1.0.2](https://github.com/Avallone-io/rls/compare/v1.0.1...v1.0.2) (2021-06-23)
+
+
+### Bug Fixes
+
+* add dependabot config ([8318713](https://github.com/Avallone-io/rls/commit/8318713cb85990c15b20bd57245ed5ab3d0c0a56))
+* deployment of dist ([99fc808](https://github.com/Avallone-io/rls/commit/99fc808f09e5ad97d44c03f5989d13f128be10a8))
+* set global module ([1af15c7](https://github.com/Avallone-io/rls/commit/1af15c7d8958c367a04fdd6ba1a924463946ed36))
+* update typeorm ([76a0b6e](https://github.com/Avallone-io/rls/commit/76a0b6e5a1516688cbab40b6a726789672475e8f))
+* use build tsconfig ([3d04bf3](https://github.com/Avallone-io/rls/commit/3d04bf3f06aa06aedbe7abe561d2de9649b62955))
+
 ## [1.0.1](https://github.com/Avallone-io/rls/compare/v1.0.0...v1.0.1) (2021-06-03)
 
 
