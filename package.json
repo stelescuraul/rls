@@ -76,7 +76,7 @@
     "@nestjs/core": "^7.6.15",
     "@nestjs/typeorm": "^7.1.5",
     "express": "^4.17.1",
-    "typeorm": "^0.2.31"
+    "typeorm": "^0.2.32"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
