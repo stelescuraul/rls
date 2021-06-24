@@ -18,15 +18,17 @@ To create a RLSConnection instance you'll need the original connection to db. Se
 This will run a `set "rls.tenant_id"` and `set "rls.actor_id"` for each request and will reset them after the query is executed.
 
 ---
+
 **RLS Policies**
 
-Your database policies will **have to** make use of `rls.tenant_id` and `rls.actor_id` in order to apply the isolation. Policy example: 
+Your database policies will **have to** make use of `rls.tenant_id` and `rls.actor_id` in order to apply the isolation. Policy example:
 
 ```sql
 CREATE POLICY tenant_isolation ON public."category" for ALL
 USING ("tenant_id" = current_setting('rls.tenant_id'))
 with check ("tenant_id" = current_setting('rls.tenant_id'));
 ```
+
 ---
 
 ## Express/KOA
@@ -58,7 +60,7 @@ In the above example, you'll have to work with the supplied connection. Calling 
 
 If you are using NestJS, this library provides helpers for making your connections and queries tenant aware.
 
-Create your TypeORM config and load the TypeORM module using `.forRoot`. Then you'll need to load the `RLSModule` with `.forRoot` where you'll define where to take the `tenantId` and `actorId` from. The second part is that you now need to replace the `TypeOrmModule.forFeature` with `...RLSModule.forFeature` and add it to providers instead of imports.
+Create your TypeORM config and load the TypeORM module using `.forRoot`. Then you'll need to load the `RLSModule` with `.forRoot` where you'll define where to take the `tenantId` and `actorId` from. The second part is that you now need to replace the `TypeOrmModule.forFeature` with `RLSModule.forFeature`.
 
 ```typescript
 app.controller.ts
@@ -76,12 +78,10 @@ app.controller.ts
         tenantId,
       };
     }),
+    RLSModule.forFeature([Post, Category]) // <- this
   ],
   controllers: [AppController],
-  providers: [
-      AppService,
-      ...RLSModule.forFeature([Post, Category]) // <- this
-  ],
+  providers: [AppService],
 })
 export class AppModule {}
 ```
