@@ -1,3 +1,16 @@
+# [1.1.0](https://github.com/Avallone-io/rls/compare/v1.0.2...v1.1.0) (2021-06-24)
+
+
+### Bug Fixes
+
+* update readme ([40be407](https://github.com/Avallone-io/rls/commit/40be40787a3dc08a7423446b8795c044f2f94a5e))
+* update typeorm peer dep ([19c17f3](https://github.com/Avallone-io/rls/commit/19c17f3508d86804e193d11318a097a8ab0cde46))
+
+
+### Features
+
+* use forFeature as dynamic module ([0afbe90](https://github.com/Avallone-io/rls/commit/0afbe902c659c4350c9f00d176e031b3581720b0))
+
 ## [1.0.2](https://github.com/Avallone-io/rls/compare/v1.0.1...v1.0.2) (2021-06-23)
 
 
