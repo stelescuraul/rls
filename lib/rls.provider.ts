@@ -1,5 +1,5 @@
 import { Provider } from '@nestjs/common';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { getConnectionToken, getRepositoryToken } from '@nestjs/typeorm';
 import { EntityClassOrSchema } from '@nestjs/typeorm/dist/interfaces/entity-class-or-schema.type';
 import { TENANT_CONNECTION } from './rls.constants';
 import {

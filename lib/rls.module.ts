@@ -15,22 +15,32 @@ import { TenancyModelOptions } from './interfaces/tenant-options.interface';
 import { TENANT_CONNECTION } from './rls.constants';
 import { createTypeormRLSProviders } from './rls.provider';
 import { Connection, ConnectionOptions } from 'typeorm';
+import { getCustomRepositoryEntity } from '@nestjs/typeorm/dist/helpers/get-custom-repository-entity';
+import { EntitiesMetadataStorage } from '@nestjs/typeorm/dist/entities-metadata.storage';
+import { DEFAULT_CONNECTION_NAME } from '@nestjs/typeorm/dist/typeorm.constants';
 
 @Global()
-@Module({
-  providers: [
-    {
-      provide: TENANT_CONNECTION,
-      useValue: TENANT_CONNECTION,
-    },
-  ],
-})
+@Module({})
 export class RLSModule {
   static forFeature(
     entities: EntityClassOrSchema[] = [],
-    connection?: Connection | ConnectionOptions | string,
-  ) {
-    return createTypeormRLSProviders(entities, connection);
+    connection:
+      | Connection
+      | ConnectionOptions
+      | string = DEFAULT_CONNECTION_NAME,
+  ): DynamicModule {
+    const providers = createTypeormRLSProviders(entities, connection);
+    const customRepositoryEntities = getCustomRepositoryEntity(entities);
+    EntitiesMetadataStorage.addEntitiesByConnection(connection, [
+      ...entities,
+      ...customRepositoryEntities,
+    ]);
+    return {
+      module: RLSModule,
+      providers: providers,
+      exports: providers,
+      global: true,
+    };
   }
 
   static forRoot(

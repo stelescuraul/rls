@@ -28,8 +28,9 @@ const configs = getTypeOrmConfig();
         tenantId,
       };
     }),
+    RLSModule.forFeature([Post, Category]),
   ],
   controllers: [AppController],
-  providers: [AppService, ...RLSModule.forFeature([Post, Category])],
+  providers: [AppService],
 })
 export class AppModule {}
