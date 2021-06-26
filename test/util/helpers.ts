@@ -97,41 +97,33 @@ export function runQueryTests(
     sinon.restore();
   });
 
-  it('gets called 4 times on normal execution', async () => {
+  it('gets called 3 times on normal execution', async () => {
     await queryRunner.query('');
-    expect(queryPrototypeSpy).to.have.callCount(4);
+    expect(queryPrototypeSpy).to.have.callCount(3);
     expect(querySpy).to.have.callCount(1);
   });
 
   it('gets called with right query and no params', async () => {
     await queryRunner.query(`select 'foo'`);
 
-    expect(queryPrototypeSpy.thirdCall).to.have.been.calledWith(`select 'foo'`);
+    expect(queryPrototypeSpy.secondCall).to.have.been.calledWith(
+      `select 'foo'`,
+    );
   });
 
   it('gets called with right query and params', async () => {
     await queryRunner.query(`select $1`, ['foo']);
 
-    expect(queryPrototypeSpy.thirdCall).to.have.been.calledWith('select $1', [
+    expect(queryPrototypeSpy.secondCall).to.have.been.calledWith('select $1', [
       'foo',
     ]);
   });
 
-  it('gets called with right tenantId', async () => {
+  it('gets called with right tenantId and actor_id', async () => {
     await queryRunner.query(`select 'foo'`);
 
     expect(queryPrototypeSpy.firstCall).to.have.been.calledWith(
-      // `select set_config('rls.tenant_id', '${tenantModelOptions.tenantId}', false)`,
-      `set "rls.tenant_id" = ${tenantModelOptions.tenantId}`,
-    );
-  });
-
-  it('gets called with right actorId', async () => {
-    await queryRunner.query(`select 'foo'`);
-
-    expect(queryPrototypeSpy.secondCall).to.have.been.calledWith(
-      // `select set_config('rls.actor_id', '${tenantModelOptions.actorId}', false)`,
-      `set "rls.actor_id" = ${tenantModelOptions.actorId}`,
+      `set "rls.tenant_id" = '${tenantModelOptions.tenantId}'; set "rls.actor_id" = '${tenantModelOptions.actorId}';`,
     );
   });
 

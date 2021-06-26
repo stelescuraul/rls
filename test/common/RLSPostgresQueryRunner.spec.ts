@@ -406,11 +406,11 @@ describe('RLSPostgresQueryRunner', () => {
         await localQueryRunner.release();
       });
 
-      it('should have 8 calls in total', async () => {
+      it('should have 6 calls in total', async () => {
         await queryRunner.query(fooQueryString);
         await localQueryRunner.query(barQueryString);
 
-        expect(queryPrototypeStub).to.have.callCount(8);
+        expect(queryPrototypeStub).to.have.callCount(6);
       });
 
       it('should return the right categories', async () => {
@@ -467,9 +467,9 @@ describe('RLSPostgresQueryRunner', () => {
           fooTenant,
         );
 
-        // The stub should have 8 calls in total
-        // 4 for each query
-        expect(queryPrototypeStub).to.have.callCount(8);
+        // The stub should have 6 calls in total
+        // 3 for each query
+        expect(queryPrototypeStub).to.have.callCount(6);
       });
 
       it('should not have race conditions on multiple runners', async () => {

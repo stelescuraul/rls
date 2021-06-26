@@ -19,7 +19,7 @@ const configs = getTypeOrmConfig();
       entities: [Post, Category],
       logging: false,
     } as ConnectionOptions),
-    RLSModule.forRoot([], (req: Request) => {
+    RLSModule.forRoot([], [], (req: Request) => {
       const tenantId = req.headers['tenant_id'] as string;
       const actorId = req.headers['actor_id'] as string;
 

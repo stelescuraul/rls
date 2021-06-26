@@ -217,7 +217,7 @@ describe('QueryBuilder', function () {
       await Promise.all(promises).then(async results => {
         let i = 0;
         // should have 4 queries per call * 20 queries
-        await expect(queryPrototypeSpy).to.have.callCount(80);
+        await expect(queryPrototypeSpy).to.have.callCount(60);
 
         // should have had 20 calls in total. One per query
         await expect(connectedQueryRunnersStub).to.have.callCount(20);
