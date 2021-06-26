@@ -61,6 +61,7 @@ In the above example, you'll have to work with the supplied connection. Calling 
 If you are using NestJS, this library provides helpers for making your connections and queries tenant aware.
 
 Create your TypeORM config and load the TypeORM module using `.forRoot`. Then you'll need to load the `RLSModule` with `.forRoot` where you'll define where to take the `tenantId` and `actorId` from. The second part is that you now need to replace the `TypeOrmModule.forFeature` with `RLSModule.forFeature`.
+You can inject non-entity dependent Modules and Providers. First array imports modules, second array injects providers.
 
 ```typescript
 app.controller.ts
@@ -68,7 +69,7 @@ app.controller.ts
 @Module({
   imports: [
     TypeOrmModule.forRoot(...),
-    RLSModule.forRoot([], (req: Request) => {
+    RLSModule.forRoot([/*Module*/], [/*Service*/], (req: Request, /*serviceInstance*/) => {
       // You can take the tenantId and actorId from headers/tokens etc
       const tenantId = req.headers['tenant_id'];
       const actorId = req.headers['actor_id'];
