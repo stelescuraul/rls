@@ -1,3 +1,15 @@
+## [1.1.1](https://github.com/Avallone-io/rls/compare/v1.1.0...v1.1.1) (2021-06-26)
+
+
+### Bug Fixes
+
+* allow nestjs to import modules ([deed505](https://github.com/Avallone-io/rls/commit/deed505b49637cf83118184b174b89ed12446557))
+
+
+### Performance Improvements
+
+* use less queries ([0ebadeb](https://github.com/Avallone-io/rls/commit/0ebadeba1b7a6dc8ae6339eeca6e4f8d8aa44109))
+
 # [1.1.0](https://github.com/Avallone-io/rls/compare/v1.0.2...v1.1.0) (2021-06-24)
 
 
