@@ -1,6 +1,7 @@
 import {
   Abstract,
   DynamicModule,
+  ForwardReference,
   Global,
   Module,
   Provider,
@@ -44,6 +45,12 @@ export class RLSModule {
   }
 
   static forRoot(
+    importModules: (
+      | DynamicModule
+      | Type<any>
+      | Promise<DynamicModule>
+      | ForwardReference<any>
+    )[],
     // eslint-disable-next-line @typescript-eslint/ban-types
     injectServices: (string | symbol | Function | Type<any> | Abstract<any>)[],
     extractTenant: (request, ...args) => TenancyModelOptions,
@@ -63,6 +70,7 @@ export class RLSModule {
 
     return {
       module: RLSModule,
+      imports: importModules,
       providers: [rlsProvider],
       exports: [TENANT_CONNECTION],
     };
