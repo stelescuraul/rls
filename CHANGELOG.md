@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/Avallone-io/rls/compare/v1.1.1...v1.1.2) (2021-06-27)
+
+
+### Bug Fixes
+
+* update readme to reflect the nestjs module ([2174b61](https://github.com/Avallone-io/rls/commit/2174b61ccb693e6f52b77bd9952436f0629f6df6))
+
 ## [1.1.1](https://github.com/Avallone-io/rls/compare/v1.1.0...v1.1.1) (2021-06-26)
 
 
