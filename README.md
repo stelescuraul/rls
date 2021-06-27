@@ -63,6 +63,8 @@ If you are using NestJS, this library provides helpers for making your connectio
 Create your TypeORM config and load the TypeORM module using `.forRoot`. Then you'll need to load the `RLSModule` with `.forRoot` where you'll define where to take the `tenantId` and `actorId` from. The second part is that you now need to replace the `TypeOrmModule.forFeature` with `RLSModule.forFeature`.
 You can inject non-entity dependent Modules and Providers. First array imports modules, second array injects providers.
 
+When using `RLSModule.forRoot` it will set your `scope` to `REQUEST`! Be sure you understand the implications of this and especially read about the request-scoped authentication strategy on [Nestjs docs](https://docs.nestjs.com/security/authentication#request-scoped-strategies).
+
 ```typescript
 app.controller.ts
 
