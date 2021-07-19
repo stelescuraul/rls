@@ -1,10 +1,11 @@
+import { Connection, EntityMetadata } from 'typeorm';
+import { RelationMetadata } from 'typeorm/metadata/RelationMetadata';
 import { RLSPostgresDriver } from '../common/RLSPostgresDriver';
 import {
   ActorId,
   TenancyModelOptions,
   TenantId,
 } from '../interfaces/tenant-options.interface';
-import { Connection, EntityMetadata } from 'typeorm';
 import { RLSPostgresQueryRunner } from './RLSPostgresQueryRunner';
 
 export class RLSConnection extends Connection {
@@ -19,6 +20,8 @@ export class RLSConnection extends Connection {
   ) {
     super(connection.options);
     Object.assign(this, connection);
+    Object.assign(this.relationLoader, { connection: this });
+    Object.assign(this.relationIdLoader, { connection: this });
 
     this.tenantId = tenancyModelOptions.tenantId;
     this.actorId = tenancyModelOptions.actorId;
@@ -29,6 +32,20 @@ export class RLSConnection extends Connection {
       const wrappedMetadata = Object.assign({}, EntityMetadata.prototype, em, {
         connection: this,
       });
+
+      const metadataRelations = [];
+      wrappedMetadata.relations.forEach(relation => {
+        const wrappedRelation = Object.assign(
+          {},
+          RelationMetadata.prototype,
+          relation,
+        );
+
+        Object.assign(wrappedRelation.entityMetadata, { connection: this });
+        metadataRelations.push(wrappedRelation);
+      });
+
+      Object.assign(wrappedMetadata, { relations: metadataRelations });
       metadatas.push(wrappedMetadata);
     });
 
