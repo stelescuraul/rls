@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/Avallone-io/rls/compare/v1.1.2...v1.1.3) (2021-07-19)
+
+
+### Bug Fixes
+
+* add relation connection wrapper ([f521e3c](https://github.com/Avallone-io/rls/commit/f521e3c319c92fd8f30eda597fd39cf082729cd6))
+
 ## [1.1.2](https://github.com/Avallone-io/rls/compare/v1.1.1...v1.1.2) (2021-06-27)
 
 
