@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/Avallone-io/rls/compare/v1.1.3...v1.1.4) (2021-07-20)
+
+
+### Bug Fixes
+
+* allow typeorm peer dep 0.2.31 ([2ecf206](https://github.com/Avallone-io/rls/commit/2ecf206a3a0e84c268ce49b6612f715dab0f7ba0))
+
 ## [1.1.3](https://github.com/Avallone-io/rls/compare/v1.1.2...v1.1.3) (2021-07-19)
 
 
