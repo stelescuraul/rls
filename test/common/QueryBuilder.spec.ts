@@ -88,9 +88,9 @@ describe('QueryBuilder', function () {
   });
 
   it('should return different queryBuilders', () => {
-    const fooQueryBuilder = fooConnection.createQueryBuilder();
-    const barQueryBuilder = barConnection.createQueryBuilder();
-    const queryBuilder = migrationConnection.createQueryBuilder();
+    const fooQueryBuilder = fooConnection.createQueryBuilder(Post, 'post');
+    const barQueryBuilder = barConnection.createQueryBuilder(Post, 'post');
+    const queryBuilder = migrationConnection.createQueryBuilder(Post, 'post');
 
     expect(fooQueryBuilder).to.not.deep.equal(queryBuilder);
     expect(barQueryBuilder).to.not.deep.equal(queryBuilder);
