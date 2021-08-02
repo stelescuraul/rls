@@ -1,6 +1,13 @@
 import { expect } from 'chai';
 import sinon = require('sinon');
-import { Connection, ConnectionOptions, createConnection } from 'typeorm';
+import {
+  Connection,
+  ConnectionOptions,
+  createConnection,
+  EntityManager,
+  getConnection,
+  getRepository,
+} from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import { RLSConnection } from '../../lib/common';
@@ -166,6 +173,19 @@ describe('Repository', function () {
       await expectTenantData(expect(bar), categories, 1, barTenant);
       await expect(cat).to.have.lengthOf(2).and.to.deep.equal(categories);
     });
+  });
+
+  it('should throw database error on first query and fulfill the second query', async () => {
+    const fooCategoryRepository = fooConnection.getRepository(Category);
+
+    await expect(
+      fooCategoryRepository.save({
+        name: 'Test',
+        numberValue: '@@@@' as any,
+      }),
+    ).to.be.rejected;
+
+    await expect(fooCategoryRepository.find()).to.be.fulfilled;
   });
 
   describe('queued queries', () => {

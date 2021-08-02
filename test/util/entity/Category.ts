@@ -11,11 +11,15 @@ export class Category extends BaseEntity {
   @Column()
   name: string;
 
+  @Column({ type: 'boolean', nullable: true })
+  numberValue: boolean;
+
   toJson() {
     return {
       id: this.id,
       tenantId: this.tenantId,
       name: this.name,
+      numberValue: this.numberValue,
     };
   }
 }

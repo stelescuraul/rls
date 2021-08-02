@@ -61,7 +61,10 @@ export class RLSConnection extends Connection {
   }
 
   createQueryRunner(): RLSPostgresQueryRunner {
-    return super.createQueryRunner() as RLSPostgresQueryRunner;
+    const qr = super.createQueryRunner() as RLSPostgresQueryRunner;
+    Object.assign(qr, { manager: this.manager });
+
+    return qr;
   }
 
   close(): Promise<void> {
