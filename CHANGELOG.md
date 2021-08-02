@@ -1,3 +1,10 @@
+## [1.1.5](https://github.com/Avallone-io/rls/compare/v1.1.4...v1.1.5) (2021-08-02)
+
+
+### Bug Fixes
+
+* **manager:** use the right manager for repository ([c917d94](https://github.com/Avallone-io/rls/commit/c917d94f5f54c40135c0b9efc608c0fba37b8a80))
+
 ## [1.1.4](https://github.com/Avallone-io/rls/compare/v1.1.3...v1.1.4) (2021-07-20)
 
 
