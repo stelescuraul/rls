@@ -1,3 +1,10 @@
+## [1.1.6](https://github.com/Avallone-io/rls/compare/v1.1.5...v1.1.6) (2021-08-23)
+
+
+### Bug Fixes
+
+* **dependabot:** update config ([d4ff445](https://github.com/Avallone-io/rls/commit/d4ff445f67514aa430a9d44a35256d33b35f730d))
+
 ## [1.1.5](https://github.com/Avallone-io/rls/compare/v1.1.4...v1.1.5) (2021-08-02)
 
 
