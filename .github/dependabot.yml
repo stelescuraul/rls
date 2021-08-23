@@ -1,0 +1,11 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'daily'
+    commit-message:
+      # Prefix all commit messages with "npm"
+      prefix: 'fix'
+      prefix_development: 'chore'
+      include: 'scope'
