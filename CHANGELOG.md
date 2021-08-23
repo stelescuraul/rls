@@ -1,3 +1,10 @@
+## [1.1.7](https://github.com/Avallone-io/rls/compare/v1.1.6...v1.1.7) (2021-08-23)
+
+
+### Bug Fixes
+
+* typo ([189276a](https://github.com/Avallone-io/rls/commit/189276a7db7999d2a99f62bb75a90b4466637333))
+
 ## [1.1.6](https://github.com/Avallone-io/rls/compare/v1.1.5...v1.1.6) (2021-08-23)
 
 
