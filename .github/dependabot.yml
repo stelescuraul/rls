@@ -7,5 +7,5 @@ updates:
     commit-message:
       # Prefix all commit messages with "npm"
       prefix: 'fix'
-      prefix_development: 'chore'
+      prefix-development: 'chore'
       include: 'scope'
