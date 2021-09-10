@@ -28,6 +28,7 @@ import {
 } from '../util/test-utils';
 import { Category } from '../util/entity/Category';
 import { Post } from '../util/entity/Post';
+import { User } from 'test/util/entity/User';
 
 const configs = getTypeOrmConfig();
 
@@ -54,7 +55,7 @@ describe('Repository', function () {
     const migrationConnectionOptions = setupSingleTestingConnection(
       'postgres',
       {
-        entities: [Post, Category],
+        entities: [Post, Category, User],
         dropSchema: true,
         schemaCreate: true,
       },
@@ -62,7 +63,7 @@ describe('Repository', function () {
     const tenantAwareConnectionOptions = setupSingleTestingConnection(
       'postgres',
       {
-        entities: [Post, Category],
+        entities: [Post, Category, User],
       },
       {
         ...configs[0],
@@ -249,6 +250,59 @@ describe('Repository', function () {
 
       // should have been 20 total query runners added over time
       expect(connectedQueryRunnersLengthHistory).to.have.lengthOf(20);
+    });
+  });
+
+  describe('Cyclic dependency on insert and remove', () => {
+    it('should insert a user entity', async () => {
+      const originalUserRepo = migrationConnection.getRepository(User);
+      const rlsUserRepo = fooConnection.getRepository(User);
+
+      const originalRepoParentUser = originalUserRepo.create({
+        tenantId: fooTenant.tenantId as number,
+        userId: fooTenant.actorId as number,
+        title: 'Original Parent',
+      });
+      const rlsRepoParentUser = rlsUserRepo.create({
+        tenantId: fooTenant.tenantId as number,
+        userId: fooTenant.actorId as number,
+        title: 'RLS Parent',
+      });
+
+      expect(originalRepoParentUser).to.not.be.undefined;
+      expect(rlsRepoParentUser).to.not.be.undefined;
+
+      await expect(originalUserRepo.save(originalRepoParentUser)).to.be
+        .fulfilled;
+
+      // this used to fail because of inverseEntityMetadata
+      await expect(rlsUserRepo.save(rlsRepoParentUser)).to.be.fulfilled;
+    });
+
+    it('should remove a user entity', async () => {
+      const originalUserRepo = migrationConnection.getRepository(User);
+      const rlsUserRepo = fooConnection.getRepository(User);
+
+      const originalRepoParentUser = originalUserRepo.create({
+        tenantId: fooTenant.tenantId as number,
+        userId: fooTenant.actorId as number,
+        title: 'Original Parent',
+      });
+      const rlsRepoParentUser = rlsUserRepo.create({
+        tenantId: fooTenant.tenantId as number,
+        userId: fooTenant.actorId as number,
+        title: 'RLS Parent',
+      });
+
+      expect(originalRepoParentUser).to.not.be.undefined;
+      expect(rlsRepoParentUser).to.not.be.undefined;
+
+      await originalUserRepo.insert(originalRepoParentUser);
+      await rlsUserRepo.insert(rlsRepoParentUser);
+
+      await expect(originalUserRepo.remove(originalRepoParentUser)).to.be
+        .fulfilled;
+      await expect(rlsUserRepo.remove(rlsRepoParentUser)).to.be.fulfilled;
     });
   });
 });
