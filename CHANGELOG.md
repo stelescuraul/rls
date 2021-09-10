@@ -1,3 +1,10 @@
+## [1.1.8](https://github.com/Avallone-io/rls/compare/v1.1.7...v1.1.8) (2021-09-10)
+
+
+### Bug Fixes
+
+* copy inverse metadata ([876174d](https://github.com/Avallone-io/rls/commit/876174dfebbf327b9c3206d1fddc942cc5d50bc4))
+
 ## [1.1.7](https://github.com/Avallone-io/rls/compare/v1.1.6...v1.1.7) (2021-08-23)
 
 
