@@ -1,4 +1,4 @@
-import { Connection, EntityMetadata } from 'typeorm';
+import { Connection, EntityMetadata, ReplicationMode } from 'typeorm';
 import { RLSPostgresDriver } from '../common/RLSPostgresDriver';
 import {
   ActorId,
@@ -90,11 +90,12 @@ export class RLSConnection extends Connection {
     Object.assign(this, { manager });
   }
 
-  createQueryRunner(): RLSPostgresQueryRunner {
-    const qr = super.createQueryRunner() as RLSPostgresQueryRunner;
-    Object.assign(qr, { manager: this.manager });
+  createQueryRunner(mode: ReplicationMode = 'master'): RLSPostgresQueryRunner {
+    const queryRunner = this.driver.createQueryRunner(mode);
+    const manager = this.createEntityManager(queryRunner);
+    Object.assign(queryRunner, { manager });
 
-    return qr;
+    return queryRunner;
   }
 
   close(): Promise<void> {

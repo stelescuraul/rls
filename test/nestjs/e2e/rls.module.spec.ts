@@ -108,6 +108,26 @@ describe('RLS Module', () => {
     await Promise.all([fooReqProm, barReqProm]);
   });
 
+  it('GET /test connection ', async () => {
+    const resp = await getAuthRequest(
+      app,
+      'get',
+      '/simulate-entity-remove-rollback',
+      fooTenant,
+    );
+
+    const deletedCategoryId = resp.body.categoryId;
+
+    const fooReqProm = getAuthRequest(app, 'get', '/categories', fooTenant)
+      .expect(200)
+      .expect(res => {
+        const allCategoryIds = res.body.map(cat => cat.id);
+        expect(allCategoryIds).to.contain(deletedCategoryId);
+      });
+
+    return fooReqProm;
+  });
+
   describe('multiple-requests', () => {
     let connectionStub: Sinon.SinonStub;
     let clock: sinon.SinonFakeTimers;

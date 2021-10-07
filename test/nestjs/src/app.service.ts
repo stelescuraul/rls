@@ -32,4 +32,17 @@ export class AppService {
   async stop() {
     return;
   }
+
+  async simulateEntityRemoveRollback() {
+    const qr = this.connection.createQueryRunner();
+    await qr.startTransaction();
+    const manager = qr.manager;
+    const category = await manager.findOne(Category, {});
+    const responseObject = { categoryId: category.id };
+    await manager.remove(category);
+    await qr.rollbackTransaction();
+    await qr.release();
+
+    return responseObject;
+  }
 }

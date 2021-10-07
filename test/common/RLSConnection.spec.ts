@@ -90,13 +90,14 @@ describe('RLSConnection', () => {
   });
 
   it('should save and return the Post', async () => {
-    const post = Post.create();
+    const postRepo = connection.getRepository(Post);
+    const post = postRepo.create();
     post.title = 'Foo';
     post.tenantId = tenantModelOptions.tenantId as number;
     post.userId = tenantModelOptions.actorId as number;
-    await post.save();
+    await postRepo.save(post);
 
-    const loadedPost = await Post.findOne(post.id);
+    const loadedPost = await postRepo.findOne(post.id);
 
     loadedPost.should.be.instanceOf(Post);
     loadedPost.id.should.be.eql(post.id);
@@ -134,6 +135,29 @@ describe('RLSConnection', () => {
       expect(qr)
         .to.have.property('actorId')
         .and.be.equal(tenantModelOptions.actorId);
+    });
+
+    it('should rollback the entity deletion', async () => {
+      const postRepo = connection.getRepository(Post);
+      const post = postRepo.create();
+      post.title = 'Foo';
+      post.tenantId = tenantModelOptions.tenantId as number;
+      post.userId = tenantModelOptions.actorId as number;
+      await postRepo.save(post);
+
+      const postId = post.id;
+
+      const qr = connection.createQueryRunner();
+      const manager = qr.manager;
+      await qr.startTransaction();
+      await manager.remove(post);
+      await qr.rollbackTransaction();
+      await qr.release();
+
+      return expect(postRepo.findOne(postId)).to.eventually.have.property(
+        'id',
+        postId,
+      );
     });
   });
 });
