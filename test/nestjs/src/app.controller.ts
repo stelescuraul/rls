@@ -14,4 +14,9 @@ export class AppController {
   getHello(): Promise<any> {
     return this.appService.getCategories();
   }
+
+  @Get('/simulate-entity-remove-rollback')
+  simulateEntityRemoveRollback() {
+    return this.appService.simulateEntityRemoveRollback();
+  }
 }

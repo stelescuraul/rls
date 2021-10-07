@@ -1,13 +1,6 @@
 import { expect } from 'chai';
 import sinon = require('sinon');
-import {
-  Connection,
-  ConnectionOptions,
-  createConnection,
-  EntityManager,
-  getConnection,
-  getRepository,
-} from 'typeorm';
+import { Connection, ConnectionOptions, createConnection } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import { RLSConnection } from '../../lib/common';
