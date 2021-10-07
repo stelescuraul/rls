@@ -1,3 +1,12 @@
+## [1.1.9](https://github.com/Avallone-io/rls/compare/v1.1.8...v1.1.9) (2021-10-07)
+
+
+### Bug Fixes
+
+* running rls set on transaction rollback ([8a56682](https://github.com/Avallone-io/rls/commit/8a5668200d54f914dd0ff25f91e5a99d83bdfdd6))
+* running rls set on transaction rollback ([ad8c3ca](https://github.com/Avallone-io/rls/commit/ad8c3ca1e0702de5ef9d6fe359bb1a379f5d9812))
+* **deps:** bump semver-regex from 3.1.2 to 3.1.3 ([3f7e65e](https://github.com/Avallone-io/rls/commit/3f7e65ea5972f0fe8ed4336602a96bb4d548d2f7))
+
 ## [1.1.8](https://github.com/Avallone-io/rls/compare/v1.1.7...v1.1.8) (2021-09-10)
 
 
