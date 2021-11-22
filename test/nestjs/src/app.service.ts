@@ -3,12 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { RLSConnection } from 'lib/common';
 import { TENANT_CONNECTION } from 'lib/rls.constants';
 import { Category } from 'test/util/entity/Category';
-import { Repository } from 'typeorm';
+import { CategoryRepository } from './category.repository';
 
 export class AppService {
   constructor(
-    @InjectRepository(Category)
-    private categoryRepo: Repository<Category>,
+    @InjectRepository(CategoryRepository)
+    private categoryRepo: CategoryRepository,
     @Inject(TENANT_CONNECTION)
     private connection: RLSConnection,
   ) {}

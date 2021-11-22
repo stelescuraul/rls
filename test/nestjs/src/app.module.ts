@@ -8,6 +8,7 @@ import { ConnectionOptions } from 'typeorm';
 import { Request } from 'express';
 import { Post } from 'test/util/entity/Post';
 import { Category } from 'test/util/entity/Category';
+import { CategoryRepository } from './category.repository';
 
 const configs = getTypeOrmConfig();
 
@@ -28,7 +29,7 @@ const configs = getTypeOrmConfig();
         tenantId,
       };
     }),
-    RLSModule.forFeature([Post, Category]),
+    RLSModule.forFeature([Post, CategoryRepository]),
   ],
   controllers: [AppController],
   providers: [AppService],
