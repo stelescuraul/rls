@@ -20,7 +20,6 @@ export class RLSConnection extends Connection {
     super(connection.options);
     Object.assign(this, connection);
     Object.assign(this.relationLoader, { connection: this });
-    Object.assign(this.relationIdLoader, { connection: this });
 
     this.tenantId = tenancyModelOptions.tenantId;
     this.actorId = tenancyModelOptions.actorId;

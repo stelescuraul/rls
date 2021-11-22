@@ -281,23 +281,32 @@ export async function createTestingConnections(
       }
 
       // create new schemas
-      if (connection.driver instanceof PostgresDriver) {
-        const schemaPaths: string[] = [];
-        connection.entityMetadatas
-          .filter(entityMetadata => !!entityMetadata.schemaPath)
-          .forEach(entityMetadata => {
-            const existSchemaPath = schemaPaths.find(
-              path => path === entityMetadata.schemaPath,
-            );
-            if (!existSchemaPath) schemaPaths.push(entityMetadata.schemaPath!);
-          });
+      const schemaPaths: Set<string> = new Set();
+      connection.entityMetadatas
+        .filter(entityMetadata => !!entityMetadata.schema)
+        .forEach(entityMetadata => {
+          let schema = entityMetadata.schema!;
 
-        const schema = connection.driver.options.schema;
-        if (schema && schemaPaths.indexOf(schema) === -1)
-          schemaPaths.push(schema);
+          if (entityMetadata.database) {
+            schema = `${entityMetadata.database}.${schema}`;
+          }
 
-        for (const schemaPath of schemaPaths) {
+          schemaPaths.add(schema);
+        });
+
+      const schema = connection.driver.options?.hasOwnProperty('schema')
+        ? (connection.driver.options as any).schema
+        : undefined;
+
+      if (schema) {
+        schemaPaths.add(schema);
+      }
+
+      for (const schemaPath of schemaPaths) {
+        try {
           await queryRunner.createSchema(schemaPath, true);
+        } catch (e) {
+          // Do nothing
         }
       }
 
