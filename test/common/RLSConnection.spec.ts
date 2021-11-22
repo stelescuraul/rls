@@ -10,7 +10,6 @@ import {
 } from '../util/test-utils';
 import { Post } from '../util/entity/Post';
 import { Category } from 'test/util/entity/Category';
-import { test } from 'mocha';
 
 describe('RLSConnection', () => {
   let connection: RLSConnection;
