@@ -8,6 +8,7 @@ import { TenancyModelOptions } from '../interfaces';
 import {
   createData,
   createTeantUser,
+  expectPostDataRelation,
   expectTenantData,
   expectTenantDataEventually,
   resetMultiTenant,
@@ -164,6 +165,45 @@ describe('QueryBuilder', function () {
       await expectTenantData(expect(bar), categories, 1, barTenant);
       await expect(cat).to.have.lengthOf(2).and.to.deep.equal(categories);
     });
+  });
+
+  it('should apply RLS to self joined relations', async () => {
+    const fooPostQueryBuilder = fooConnection
+      .createQueryBuilder(Post, 'posts')
+      .leftJoinAndSelect('posts.categories', 'categories');
+    const barPostQueryBuilder = barConnection
+      .createQueryBuilder(Post, 'posts')
+      .leftJoinAndSelect('posts.categories', 'categories');
+    const postQueryBuilder = migrationConnection
+      .createQueryBuilder(Post, 'posts')
+      .leftJoinAndSelect('posts.categories', 'categories');
+
+    await expectPostDataRelation(
+      expect(fooPostQueryBuilder.getMany()),
+      posts,
+      1,
+      fooTenant,
+    );
+
+    await expectPostDataRelation(
+      expect(barPostQueryBuilder.getMany()),
+      posts,
+      1,
+      barTenant,
+    );
+
+    const fooPostFindProm = fooPostQueryBuilder.getMany();
+    const barPostFindProm = barPostQueryBuilder.getMany();
+    const postFindProm = postQueryBuilder.getMany();
+
+    // execute them in parallel, the results should still be correct
+    await Promise.all([fooPostFindProm, barPostFindProm, postFindProm]).then(
+      async ([foo, bar, post]) => {
+        await expectPostDataRelation(expect(foo), posts, 1, fooTenant, false);
+        await expectPostDataRelation(expect(bar), posts, 1, barTenant, false);
+        await expect(post).to.have.lengthOf(3).and.to.deep.equal(posts);
+      },
+    );
   });
 
   describe('queued queries', () => {

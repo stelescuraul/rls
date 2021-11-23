@@ -8,6 +8,7 @@ import { TenancyModelOptions } from '../interfaces';
 import {
   createData,
   createTeantUser,
+  expectPostDataRelation,
   expectTenantData,
   expectTenantDataEventually,
   resetMultiTenant,
@@ -151,6 +152,48 @@ describe('EntityManager', function () {
       await expectTenantData(expect(bar), categories, 1, barTenant);
       await expect(cat).to.have.lengthOf(2).and.to.deep.equal(categories);
     });
+  });
+
+  it('should apply RLS to relation queries', async () => {
+    const fooEntityManager = fooConnection.createEntityManager();
+    const barEntityManager = barConnection.createEntityManager();
+    const entityManager = migrationConnection.createEntityManager();
+
+    await expectPostDataRelation(
+      expect(fooEntityManager.find(Post, { relations: ['categories'] })),
+      posts,
+      1,
+      fooTenant,
+    );
+    await expectPostDataRelation(
+      expect(barEntityManager.find(Post, { relations: ['categories'] })),
+      posts,
+      1,
+      barTenant,
+    );
+
+    const fooPostFindProm = fooEntityManager.find(Post, {
+      relations: ['categories'],
+    });
+    const barPostFindProm = barEntityManager.find(Post, {
+      relations: ['categories'],
+    });
+    const postFindProm = entityManager.find(Post, {
+      relations: ['categories'],
+    });
+
+    // execute them in parallel, the results should still be correct
+    await Promise.all([fooPostFindProm, barPostFindProm, postFindProm]).then(
+      async ([foo, bar, cat]) => {
+        await expectPostDataRelation(expect(foo), posts, 1, fooTenant, false);
+        await expectPostDataRelation(expect(bar), posts, 1, barTenant, false);
+
+        await expect(cat)
+          .to.have.lengthOf(3)
+          .satisfy((arr: Post[]) => arr.every(a => !!a.categories))
+          .and.to.deep.equal(posts);
+      },
+    );
   });
 
   describe('queued queries', () => {

@@ -174,6 +174,27 @@ export function expectTenantDataEventually(
     }),
   );
 }
+export function expectPostDataRelation(
+  expectQuery: Chai.Assertion,
+  data: Post[],
+  total: number,
+  tenant: TenancyModelOptions,
+  thenable = true,
+) {
+  const query = thenable ? expectQuery.to.eventually : expectQuery.to;
+  return query.have
+    .lengthOf(total)
+    .satisfy((arr: Post[]) => arr.every(a => !!a.categories))
+    .and.to.deep.equal(
+      data.filter(x => {
+        return (
+          x.tenantId === tenant.tenantId &&
+          x.userId === tenant.actorId &&
+          x.categories.filter(c => c.tenantId === tenant.tenantId)
+        );
+      }),
+    );
+}
 export async function createData(
   fooTenant: TenancyModelOptions,
   barTenant: TenancyModelOptions,
