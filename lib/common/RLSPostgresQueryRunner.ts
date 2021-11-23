@@ -27,14 +27,18 @@ export class RLSPostgresQueryRunner extends PostgresQueryRunner {
     this.actorId = tenancyModelOptions.actorId;
   }
 
-  async query(queryString: string, params?: any[]): Promise<any> {
+  async query(
+    queryString: string,
+    params?: any[],
+    useStructuredResult?: boolean,
+  ): Promise<any> {
     if (!this.isTransactionCommand) {
       await super.query(
         `set "rls.tenant_id" = '${this.tenantId}'; set "rls.actor_id" = '${this.actorId}';`,
       );
     }
 
-    const result = await super.query(queryString, params);
+    const result = await super.query(queryString, params, useStructuredResult);
 
     if (!this.isTransactionCommand) {
       await super.query(`reset rls.actor_id; reset rls.tenant_id;`);

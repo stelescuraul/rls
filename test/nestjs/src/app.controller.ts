@@ -10,8 +10,13 @@ export class AppController {
     return this.appService.status();
   }
 
+  @Get('/posts')
+  getPosts(): Promise<any> {
+    return this.appService.getPosts();
+  }
+
   @Get('/categories')
-  getHello(): Promise<any> {
+  getCategories(): Promise<any> {
     return this.appService.getCategories();
   }
 

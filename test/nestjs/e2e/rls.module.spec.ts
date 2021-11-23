@@ -33,6 +33,7 @@ describe('RLS Module', () => {
   const tenantDbUser = 'tenant_aware_user';
   let migrationConnection: Connection;
   let categories: Category[];
+  let posts: Post[];
   let moduleRef: TestingModule;
 
   const fooTenant: TenancyModelOptions = {
@@ -56,6 +57,7 @@ describe('RLS Module', () => {
       migrationConnection,
     );
     categories = testData.categories;
+    posts = testData.posts;
 
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],
@@ -77,7 +79,13 @@ describe('RLS Module', () => {
     return request(app.getHttpServer()).get('/status').expect(200).expect('ok');
   });
 
-  it('GET /categories for foo tenant', () => {
+  it('GET /categories and /posts for foo tenant', () => {
+    getAuthRequest(app, 'get', '/posts', fooTenant)
+      .expect(200)
+      .expect(res => {
+        expectTenantData(expect(res.body), posts, 1, fooTenant, true);
+      });
+
     return getAuthRequest(app, 'get', '/categories', fooTenant)
       .expect(200)
       .expect(res => {

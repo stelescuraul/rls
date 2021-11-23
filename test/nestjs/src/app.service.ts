@@ -4,11 +4,14 @@ import { RLSConnection } from 'lib/common';
 import { TENANT_CONNECTION } from 'lib/rls.constants';
 import { Category } from 'test/util/entity/Category';
 import { Repository } from 'typeorm';
+import { PostRepository } from './post.repository';
 
 export class AppService {
   constructor(
     @InjectRepository(Category)
     private categoryRepo: Repository<Category>,
+    @InjectRepository(PostRepository)
+    private postRepo: PostRepository,
     @Inject(TENANT_CONNECTION)
     private connection: RLSConnection,
   ) {}
@@ -23,6 +26,10 @@ export class AppService {
     await this.getConnection();
 
     return this.categoryRepo.find();
+  }
+
+  async getPosts() {
+    return this.postRepo.read();
   }
 
   async getConnection() {

@@ -78,7 +78,6 @@ describe('RLSConnection', () => {
       'subscribers',
       'queryResultCache',
       'relationLoader',
-      'relationIdLoader',
     ];
     for (const key of keys) {
       expect(connection).to.have.property(key, originalConnection[key]);
