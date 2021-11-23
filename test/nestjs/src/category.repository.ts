@@ -3,7 +3,7 @@ import { EntityRepository, Repository } from 'typeorm';
 
 @EntityRepository(Category)
 export class CategoryRepository extends Repository<Category> {
-  public dummy() {
-    console.log('dummy function called');
+  public read() {
+    return this.find();
   }
 }

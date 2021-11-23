@@ -22,7 +22,7 @@ export class AppService {
     await this.stop();
     await this.getConnection();
 
-    return this.categoryRepo.find();
+    return this.categoryRepo.read();
   }
 
   async getConnection() {
