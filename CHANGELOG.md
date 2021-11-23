@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/Avallone-io/rls/compare/v1.1.9...v1.2.0) (2021-11-23)
+
+
+### Features
+
+* **typeorm:** update typeorm version release ([ef24f29](https://github.com/Avallone-io/rls/commit/ef24f29d738333819e98acb83364b7d163c2d27f))
+
 ## [1.1.9](https://github.com/Avallone-io/rls/compare/v1.1.8...v1.1.9) (2021-10-07)
 
 
