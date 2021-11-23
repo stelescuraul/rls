@@ -184,7 +184,6 @@ describe('QueryBuilder', function () {
       1,
       fooTenant,
     );
-
     await expectPostDataRelation(
       expect(barPostQueryBuilder.getMany()),
       posts,
