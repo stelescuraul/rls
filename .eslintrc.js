@@ -13,7 +13,7 @@ module.exports = {
   root: true,
   env: {
     node: true,
-    jest: true,
+    jest: false,
   },
   rules: {
     'prettier/prettier': ['error'],
@@ -48,7 +48,6 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['./src/database/migrations/*.ts', './src/database/seed/*.ts'],
       rules: {
         '@typescript-eslint/camelcase': 'off',
       },
