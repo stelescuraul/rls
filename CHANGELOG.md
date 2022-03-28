@@ -1,3 +1,18 @@
+# [1.3.0](https://github.com/Avallone-io/rls/compare/v1.2.0...v1.3.0) (2022-03-28)
+
+
+### Bug Fixes
+
+* lint ([3b68257](https://github.com/Avallone-io/rls/commit/3b682570519d4cfaf7b62db916dabf090210a16a))
+* update package-lock version ([20064e9](https://github.com/Avallone-io/rls/commit/20064e9dea6bdda24031468760c85e2ff02afef2))
+* update the node version and packages ([52e356c](https://github.com/Avallone-io/rls/commit/52e356c3943124cb5dd03c17b95652742efa9757))
+
+
+### Features
+
+* update packages ([36c750b](https://github.com/Avallone-io/rls/commit/36c750bfa4539d56de8351cd7ac565aab7a3b3ba))
+* update to node 16 and typeorm 0.2.45 ([75bea0c](https://github.com/Avallone-io/rls/commit/75bea0c0bacd650eae42f5141ec37751f0fa3870))
+
 # [1.2.0](https://github.com/Avallone-io/rls/compare/v1.1.9...v1.2.0) (2021-11-23)
 
 
