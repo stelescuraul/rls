@@ -42,15 +42,14 @@ module.exports = {
         selector: 'typeLike',
         format: ['PascalCase'],
       },
-      { selector: 'enumMember', format: ['camelCase', 'UPPER_CASE', 'PascalCase'] },
-      { selector: 'parameter', format: ['camelCase', 'UPPER_CASE', 'PascalCase'] },
+      {
+        selector: 'enumMember',
+        format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+      },
+      {
+        selector: 'parameter',
+        format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+      },
     ],
   },
-  overrides: [
-    {
-      rules: {
-        '@typescript-eslint/camelcase': 'off',
-      },
-    },
-  ],
 };
