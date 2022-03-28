@@ -13,7 +13,7 @@ module.exports = {
   root: true,
   env: {
     node: true,
-    jest: true,
+    jest: false,
   },
   rules: {
     'prettier/prettier': ['error'],
@@ -42,16 +42,14 @@ module.exports = {
         selector: 'typeLike',
         format: ['PascalCase'],
       },
-      { selector: 'enumMember', format: ['camelCase', 'UPPER_CASE', 'PascalCase'] },
-      { selector: 'parameter', format: ['camelCase', 'UPPER_CASE', 'PascalCase'] },
+      {
+        selector: 'enumMember',
+        format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+      },
+      {
+        selector: 'parameter',
+        format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+      },
     ],
   },
-  overrides: [
-    {
-      files: ['./src/database/migrations/*.ts', './src/database/seed/*.ts'],
-      rules: {
-        '@typescript-eslint/camelcase': 'off',
-      },
-    },
-  ],
 };

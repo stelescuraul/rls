@@ -13,7 +13,6 @@ import {
   createConnections,
 } from 'typeorm';
 import { QueryResultCache } from 'typeorm/cache/QueryResultCache';
-import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { configs } from '../../ormconfig';
 
 /**
