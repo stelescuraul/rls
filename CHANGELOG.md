@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/Avallone-io/rls/compare/v1.3.0...v1.4.0) (2022-08-08)
+
+
+### Features
+
+* allow async factory function on forRoot ([1d1f855](https://github.com/Avallone-io/rls/commit/1d1f8552d376a3019a0087976c25d4285c45d68b))
+
 # [1.3.0](https://github.com/Avallone-io/rls/compare/v1.2.0...v1.3.0) (2022-03-28)
 
 
