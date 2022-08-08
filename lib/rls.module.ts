@@ -53,14 +53,17 @@ export class RLSModule {
     )[],
     // eslint-disable-next-line @typescript-eslint/ban-types
     injectServices: (string | symbol | Function | Type<any> | Abstract<any>)[],
-    extractTenant: (request, ...args) => TenancyModelOptions,
+    extractTenant: (
+      request,
+      ...args
+    ) => TenancyModelOptions | Promise<TenancyModelOptions>,
   ): DynamicModule {
     const rlsProvider: Provider = {
       provide: TENANT_CONNECTION,
       inject: [REQUEST, Connection, ...injectServices],
       scope: Scope.REQUEST,
-      useFactory: (request: Request, connection: Connection, ...args) => {
-        const tenantModelOptions: TenancyModelOptions = extractTenant(
+      useFactory: async (request: Request, connection: Connection, ...args) => {
+        const tenantModelOptions: TenancyModelOptions = await extractTenant(
           request,
           ...args,
         );
