@@ -73,6 +73,7 @@ describe('RLSConnection', () => {
       'name',
       'options',
       'isConnected',
+      'isInitialized',
       'namingStrategy',
       'migrations',
       'subscribers',
@@ -96,7 +97,7 @@ describe('RLSConnection', () => {
     post.userId = tenantModelOptions.actorId as number;
     await postRepo.save(post);
 
-    const loadedPost = await postRepo.findOne(post.id);
+    const loadedPost = await postRepo.findOneBy({ id: post.id });
 
     loadedPost.should.be.instanceOf(Post);
     loadedPost.id.should.be.eql(post.id);
@@ -109,9 +110,27 @@ describe('RLSConnection', () => {
         originalConnection,
         tenantModelOptions,
       );
-      expect(tempConnection.close).to.throw(/Cannot close connection .*/);
-      expect(tempConnection.isConnected).to.be.true;
-      expect(originalConnection.isConnected).to.be.true;
+      expect(tempConnection.close).to.throw(
+        /Cannot close virtual connection.*/,
+      );
+      expect(tempConnection.isInitialized).to.be.true;
+      expect(originalConnection.isInitialized).to.be.true;
+      expect((originalConnection.driver as PostgresDriver).master.ending).to.be
+        .false;
+    });
+  });
+
+  describe('#destroy', () => {
+    it('throw error if trying to destroy connection on RLSConnection instance', async () => {
+      const tempConnection = new RLSConnection(
+        originalConnection,
+        tenantModelOptions,
+      );
+      expect(tempConnection.destroy).to.throw(
+        /Cannot destroy virtual connection.*/,
+      );
+      expect(tempConnection.isInitialized).to.be.true;
+      expect(originalConnection.isInitialized).to.be.true;
       expect((originalConnection.driver as PostgresDriver).master.ending).to.be
         .false;
     });
@@ -153,10 +172,9 @@ describe('RLSConnection', () => {
       await qr.rollbackTransaction();
       await qr.release();
 
-      return expect(postRepo.findOne(postId)).to.eventually.have.property(
-        'id',
-        postId,
-      );
+      return expect(
+        postRepo.findOne({ where: { id: postId } }),
+      ).to.eventually.have.property('id', postId);
     });
   });
 });

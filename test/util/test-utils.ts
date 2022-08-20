@@ -4,13 +4,12 @@
  * Slightly modified for convenience
  */
 import {
-  ConnectionOptions,
   DatabaseType,
   EntitySchema,
   NamingStrategyInterface,
-  Connection,
+  DataSource,
   Logger,
-  createConnections,
+  DataSourceOptions,
 } from 'typeorm';
 import { QueryResultCache } from 'typeorm/cache/QueryResultCache';
 import { configs } from '../../ormconfig';
@@ -18,7 +17,7 @@ import { configs } from '../../ormconfig';
 /**
  * Interface in which data is stored in ormconfig.json of the project.
  */
-export type TestingConnectionOptions = ConnectionOptions & {
+export type TestingConnectionOptions = DataSourceOptions & {
   /**
    * Indicates if this connection should be skipped.
    */
@@ -113,7 +112,7 @@ export interface TestingOptions {
         /**
          * Factory function for custom cache providers that implement QueryResultCache.
          */
-        readonly provider?: (connection: Connection) => QueryResultCache;
+        readonly provider?: (connection: DataSource) => QueryResultCache;
 
         /**
          * Used to provide mongodb / redis connection options.
@@ -158,7 +157,7 @@ export function setupSingleTestingConnection(
   driverType: DatabaseType,
   options: TestingOptions,
   typeormConfig?: TestingConnectionOptions,
-): ConnectionOptions | undefined {
+): DataSourceOptions | undefined {
   const testingConnections = setupTestingConnections(
     {
       name: options.name ? options.name : undefined,
@@ -194,7 +193,7 @@ export function getTypeOrmConfig(): TestingConnectionOptions[] {
 export function setupTestingConnections(
   options?: TestingOptions,
   typeormConfigs?: TestingConnectionOptions[],
-): ConnectionOptions[] {
+): DataSourceOptions[] {
   const ormConfigConnectionOptionsArray = typeormConfigs
     ? typeormConfigs
     : getTypeOrmConfig();
@@ -220,7 +219,7 @@ export function setupTestingConnections(
     .map(connectionOptions => {
       let newOptions: any = Object.assign(
         {},
-        connectionOptions as ConnectionOptions,
+        connectionOptions as DataSourceOptions,
         {
           name: options && options.name ? options.name : connectionOptions.name,
           entities: options && options.entities ? options.entities : [],
@@ -260,20 +259,25 @@ export function setupTestingConnections(
 export async function createTestingConnections(
   options?: TestingOptions,
   typeormConfigs?: TestingConnectionOptions[],
-): Promise<Connection[]> {
-  const connections = await createConnections(
-    setupTestingConnections(options, typeormConfigs),
-  );
+): Promise<DataSource[]> {
+  const dataSourceOptions = setupTestingConnections(options, typeormConfigs);
+  const dataSources: DataSource[] = [];
+  for (const options of dataSourceOptions) {
+    const dataSource = new DataSource(options);
+    await dataSource.initialize();
+    dataSources.push(dataSource);
+  }
+
   await Promise.all(
-    connections.map(async connection => {
+    dataSources.map(async dataSource => {
       // create new databases
       const databases: string[] = [];
-      connection.entityMetadatas.forEach(metadata => {
+      dataSource.entityMetadatas.forEach(metadata => {
         if (metadata.database && databases.indexOf(metadata.database) === -1)
           databases.push(metadata.database);
       });
 
-      const queryRunner = connection.createQueryRunner();
+      const queryRunner = dataSource.createQueryRunner();
 
       for (const database of databases) {
         await queryRunner.createDatabase(database, true);
@@ -281,7 +285,7 @@ export async function createTestingConnections(
 
       // create new schemas
       const schemaPaths: Set<string> = new Set();
-      connection.entityMetadatas
+      dataSource.entityMetadatas
         .filter(entityMetadata => !!entityMetadata.schema)
         .forEach(entityMetadata => {
           let schema = entityMetadata.schema!;
@@ -293,8 +297,8 @@ export async function createTestingConnections(
           schemaPaths.add(schema);
         });
 
-      const schema = connection.driver.options?.hasOwnProperty('schema')
-        ? (connection.driver.options as any).schema
+      const schema = dataSource.driver.options?.hasOwnProperty('schema')
+        ? (dataSource.driver.options as any).schema
         : undefined;
 
       if (schema) {
@@ -313,13 +317,13 @@ export async function createTestingConnections(
     }),
   );
 
-  return connections;
+  return dataSources;
 }
 
 /**
  * Closes testing connections if they are connected.
  */
-export function closeTestingConnections(connections: Connection[]) {
+export function closeTestingConnections(connections: DataSource[]) {
   return Promise.all(
     connections.map(connection =>
       connection && connection.isConnected ? connection.close() : undefined,
@@ -330,7 +334,7 @@ export function closeTestingConnections(connections: Connection[]) {
 /**
  * Reloads all databases for all given connections.
  */
-export function reloadTestingDatabases(connections: Connection[]) {
+export function reloadTestingDatabases(connections: DataSource[]) {
   return Promise.all(
     connections.map(connection => connection.synchronize(true)),
   );

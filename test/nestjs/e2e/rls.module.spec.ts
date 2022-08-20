@@ -22,7 +22,7 @@ import {
   setupSingleTestingConnection,
   TestingConnectionOptions,
 } from 'test/util/test-utils';
-import { Connection, createConnection } from 'typeorm';
+import { DataSource } from 'typeorm';
 import Sinon = require('sinon');
 
 const fetch = Fetch.default;
@@ -31,7 +31,7 @@ const configs = getTypeOrmConfig();
 describe('RLS Module', () => {
   let app: INestApplication;
   const tenantDbUser = 'tenant_aware_user';
-  let migrationConnection: Connection;
+  let migrationConnection: DataSource;
   let categories: Category[];
   let posts: Post[];
   let moduleRef: TestingModule;
@@ -258,9 +258,9 @@ describe('RLS Module', () => {
 });
 
 async function setupDatabase(
-  migrationConnection: Connection,
+  migrationConnection: DataSource,
   tenantDbUser: string,
-): Promise<Connection> {
+): Promise<DataSource> {
   const migrationConnectionOptions = setupSingleTestingConnection(
     'postgres',
     {
@@ -275,7 +275,9 @@ async function setupDatabase(
     } as TestingConnectionOptions,
   );
 
-  migrationConnection = await createConnection(migrationConnectionOptions);
+  migrationConnection = new DataSource(migrationConnectionOptions);
+  await migrationConnection.initialize();
+
   await createTeantUser(migrationConnection, tenantDbUser);
   await setupMultiTenant(migrationConnection, tenantDbUser);
   return migrationConnection;
@@ -294,7 +296,7 @@ function getAuthRequest(
 }
 
 function expectRLSInstanceTenant(
-  connection: Connection,
+  connection: DataSource,
   tenant: TenancyModelOptions,
 ) {
   expect(connection).to.be.instanceOf(RLSConnection);

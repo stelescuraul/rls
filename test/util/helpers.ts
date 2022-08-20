@@ -1,4 +1,4 @@
-import { Connection, QueryRunner } from 'typeorm';
+import { DataSource, QueryRunner } from 'typeorm';
 import {
   RLSConnection,
   RLSPostgresDriver,
@@ -198,7 +198,7 @@ export function expectPostDataRelation(
 export async function createData(
   fooTenant: TenancyModelOptions,
   barTenant: TenancyModelOptions,
-  connection: Connection,
+  connection: DataSource,
 ) {
   const categoryRepo = connection.getRepository(Category);
   const postRepo = connection.getRepository(Post);
@@ -212,8 +212,12 @@ export async function createData(
     tenantId: barTenant.tenantId as number,
   });
 
-  const fooCategory = await categoryRepo.findOne({ name: 'FooCategory' });
-  const barCategory = await categoryRepo.findOne({ name: 'BarCategory' });
+  const fooCategory = await categoryRepo.findOneBy({
+    name: 'FooCategory',
+  });
+  const barCategory = await categoryRepo.findOneBy({
+    name: 'BarCategory',
+  });
 
   await postRepo.save({
     tenantId: fooTenant.tenantId as number,
@@ -242,7 +246,7 @@ export async function createData(
   };
 }
 export async function createTeantUser(
-  queryRunner: RLSPostgresQueryRunner | RLSConnection | Connection,
+  queryRunner: RLSPostgresQueryRunner | RLSConnection | DataSource,
   tenantDbUser: string,
 ) {
   await queryRunner.query(`drop role if exists ${tenantDbUser}`);
@@ -251,7 +255,7 @@ export async function createTeantUser(
   );
 }
 export async function setupMultiTenant(
-  queryRunner: RLSPostgresQueryRunner | RLSConnection | Connection,
+  queryRunner: RLSPostgresQueryRunner | RLSConnection | DataSource,
   tenantDbUser: string,
 ) {
   await queryRunner.query(
@@ -281,13 +285,13 @@ export async function setupMultiTenant(
           AND "userId" = current_setting('rls.actor_id')::int4  );`);
 }
 export async function setQueryRunnerRole(
-  queryRunner: RLSPostgresQueryRunner | RLSConnection | Connection,
+  queryRunner: RLSPostgresQueryRunner | RLSConnection | DataSource,
   tenantDbUser: string,
 ) {
   await queryRunner.query(`set role ${tenantDbUser}`);
 }
 export async function resetMultiTenant(
-  queryRunner: RLSPostgresQueryRunner | RLSConnection | Connection,
+  queryRunner: RLSPostgresQueryRunner | RLSConnection | DataSource,
   tenantDbUser: string,
 ) {
   await queryRunner.query(`reset role`);
