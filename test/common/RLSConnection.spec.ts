@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Connection, createConnection } from 'typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { RLSConnection, RLSPostgresQueryRunner } from '../../lib/common';
 import { TenancyModelOptions } from 'lib/interfaces';
@@ -13,7 +13,7 @@ import { Category } from 'test/util/entity/Category';
 
 describe('RLSConnection', () => {
   let connection: RLSConnection;
-  let originalConnection: Connection;
+  let originalConnection: DataSource;
 
   const tenantModelOptions: TenancyModelOptions = {
     actorId: 10,
@@ -27,7 +27,7 @@ describe('RLSConnection', () => {
       schemaCreate: true,
     });
 
-    originalConnection = await createConnection(connectionOptions);
+    originalConnection = await new DataSource(connectionOptions).initialize();
     connection = new RLSConnection(originalConnection, tenantModelOptions);
   });
   beforeEach(() => reloadTestingDatabases([connection]));

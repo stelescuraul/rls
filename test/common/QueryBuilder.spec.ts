@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon = require('sinon');
-import { Connection, ConnectionOptions, createConnection } from 'typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import { RLSConnection } from '../../lib/common';
@@ -28,8 +28,8 @@ describe('QueryBuilder', function () {
   const tenantDbUser = 'tenant_aware_user';
   let fooConnection: RLSConnection;
   let barConnection: RLSConnection;
-  let migrationConnection: Connection;
-  let tenantUserConnection: Connection;
+  let migrationConnection: DataSource;
+  let tenantUserConnection: DataSource;
   let categories: Category[];
   let posts: Post[];
 
@@ -61,13 +61,17 @@ describe('QueryBuilder', function () {
         ...configs[0],
         name: 'tenantAware',
         username: tenantDbUser,
-      } as ConnectionOptions,
+      } as DataSourceOptions,
     );
 
-    migrationConnection = await createConnection(migrationConnectionOptions);
+    migrationConnection = await new DataSource(
+      migrationConnectionOptions,
+    ).initialize();
     await createTeantUser(migrationConnection, tenantDbUser);
 
-    tenantUserConnection = await createConnection(tenantAwareConnectionOptions);
+    tenantUserConnection = await new DataSource(
+      tenantAwareConnectionOptions,
+    ).initialize();
     fooConnection = new RLSConnection(tenantUserConnection, fooTenant);
     barConnection = new RLSConnection(tenantUserConnection, barTenant);
   });

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon = require('sinon');
-import { Connection, ConnectionOptions, createConnection } from 'typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import { RLSConnection } from '../../lib/common';
@@ -30,8 +30,8 @@ describe('Repository', function () {
   const tenantDbUser = 'tenant_aware_user';
   let fooConnection: RLSConnection;
   let barConnection: RLSConnection;
-  let migrationConnection: Connection;
-  let tenantUserConnection: Connection;
+  let migrationConnection: DataSource;
+  let tenantUserConnection: DataSource;
   let categories: Category[];
   let posts: Post[];
 
@@ -63,13 +63,17 @@ describe('Repository', function () {
         ...configs[0],
         name: 'tenantAware',
         username: tenantDbUser,
-      } as ConnectionOptions,
+      } as DataSourceOptions,
     );
 
-    migrationConnection = await createConnection(migrationConnectionOptions);
+    migrationConnection = await new DataSource(
+      migrationConnectionOptions,
+    ).initialize();
     await createTeantUser(migrationConnection, tenantDbUser);
 
-    tenantUserConnection = await createConnection(tenantAwareConnectionOptions);
+    tenantUserConnection = await new DataSource(
+      tenantAwareConnectionOptions,
+    ).initialize();
     fooConnection = new RLSConnection(tenantUserConnection, fooTenant);
     barConnection = new RLSConnection(tenantUserConnection, barTenant);
   });
@@ -176,26 +180,44 @@ describe('Repository', function () {
     const postRepository = migrationConnection.getRepository(Post);
 
     await expectPostDataRelation(
-      expect(fooPostRepository.find({ relations: ['categories'] })),
+      expect(
+        fooPostRepository.find({
+          relations: {
+            categories: true,
+          },
+        }),
+      ),
       posts,
       1,
       fooTenant,
     );
     await expectPostDataRelation(
-      expect(barPostRepository.find({ relations: ['categories'] })),
+      expect(
+        barPostRepository.find({
+          relations: {
+            categories: true,
+          },
+        }),
+      ),
       posts,
       1,
       barTenant,
     );
 
     const fooPostFindProm = fooPostRepository.find({
-      relations: ['categories'],
+      relations: {
+        categories: true,
+      },
     });
     const barPostFindProm = barPostRepository.find({
-      relations: ['categories'],
+      relations: {
+        categories: true,
+      },
     });
     const postFindProm = postRepository.find({
-      relations: ['categories'],
+      relations: {
+        categories: true,
+      },
     });
 
     // execute them in parallel, the results should still be correct
