@@ -195,6 +195,20 @@ export function expectPostDataRelation(
       }),
     );
 }
+export function expectPostForTenant(
+  post: Post,
+  data: Post[],
+  tenant: TenancyModelOptions,
+) {
+  return expect(post).to.deep.equal(
+    data.find(
+      x =>
+        x.tenantId === tenant.tenantId &&
+        x.userId === tenant.actorId &&
+        x.categories.filter(c => c.tenantId === tenant.tenantId),
+    ),
+  );
+}
 export async function createData(
   fooTenant: TenancyModelOptions,
   barTenant: TenancyModelOptions,

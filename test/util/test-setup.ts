@@ -6,3 +6,5 @@ import * as sinonChai from 'sinon-chai';
 chai.should();
 chai.use(sinonChai);
 chai.use(chaiAsPromised);
+
+chai.config.truncateThreshold = 0;

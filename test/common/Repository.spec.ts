@@ -9,6 +9,7 @@ import {
   createData,
   createTeantUser,
   expectPostDataRelation,
+  expectPostForTenant,
   expectTenantData,
   expectTenantDataEventually,
   resetMultiTenant,
@@ -174,7 +175,7 @@ describe('Repository', function () {
     });
   });
 
-  it('should apply RLS to relation queries', async () => {
+  it('should apply RLS to join relation strategy', async () => {
     const fooPostRepository = fooConnection.getRepository(Post);
     const barPostRepository = barConnection.getRepository(Post);
     const postRepository = migrationConnection.getRepository(Post);
@@ -229,6 +230,134 @@ describe('Repository', function () {
           .to.have.lengthOf(3)
           .satisfy((arr: Post[]) => arr.every(a => !!a.categories))
           .and.to.deep.equal(posts);
+      },
+    );
+  });
+
+  it('should apply RLS to query relation strategy', async () => {
+    const fooPostRepository = fooConnection.getRepository(Post);
+    const barPostRepository = barConnection.getRepository(Post);
+    const postRepository = migrationConnection.getRepository(Post);
+
+    await expectPostDataRelation(
+      expect(
+        fooPostRepository.find({
+          relationLoadStrategy: 'query',
+          relations: {
+            categories: true,
+          },
+        }),
+      ),
+      posts,
+      1,
+      fooTenant,
+    );
+    await expectPostDataRelation(
+      expect(
+        barPostRepository.find({
+          relationLoadStrategy: 'query',
+          relations: {
+            categories: true,
+          },
+        }),
+      ),
+      posts,
+      1,
+      barTenant,
+    );
+
+    const fooPostFindProm = fooPostRepository.find({
+      relationLoadStrategy: 'query',
+      relations: {
+        categories: true,
+      },
+    });
+    const barPostFindProm = barPostRepository.find({
+      relationLoadStrategy: 'query',
+      relations: {
+        categories: true,
+      },
+    });
+    const postFindProm = postRepository.find({
+      relationLoadStrategy: 'query',
+      relations: {
+        categories: true,
+      },
+    });
+
+    // execute them in parallel, the results should still be correct
+    await Promise.all([fooPostFindProm, barPostFindProm, postFindProm]).then(
+      async ([foo, bar, cat]) => {
+        await expectPostDataRelation(expect(foo), posts, 1, fooTenant, false);
+        await expectPostDataRelation(expect(bar), posts, 1, barTenant, false);
+        await expect(cat)
+          .to.have.lengthOf(3)
+          .satisfy((arr: Post[]) => arr.every(a => !!a.categories))
+          .and.to.deep.equal(posts);
+      },
+    );
+  });
+
+  it('should apply RLS to all find operators', async () => {
+    // use two repositories to also test the parallel execution for rls
+    const fooPostRepository = fooConnection.getRepository(Post);
+    const barPostRepository = barConnection.getRepository(Post);
+
+    const fooFindByPromise = fooPostRepository.findBy({
+      title: 'Foo post',
+    });
+    const barFindPromise = barPostRepository.find({
+      where: {
+        title: 'Bar post',
+      },
+    });
+    const fooFindOnePromise = fooPostRepository.findOne({
+      where: {
+        title: 'Foo post',
+      },
+    });
+    const barFindOneByPromise = barPostRepository.findOneBy({
+      title: 'Bar post',
+    });
+
+    await Promise.all([
+      fooFindByPromise,
+      barFindPromise,
+      fooFindOnePromise,
+      barFindOneByPromise,
+    ]).then(
+      async ([
+        fooFindByResult,
+        barFindResult,
+        fooFindOneResult,
+        barFindOneByResult,
+      ]) => {
+        await expectPostDataRelation(
+          expect(fooFindByResult),
+          posts,
+          1,
+          fooTenant,
+          false,
+        );
+        await expectPostDataRelation(
+          expect(barFindResult),
+          posts,
+          1,
+          barTenant,
+          false,
+        );
+
+        await expect(fooFindOneResult).to.deep.equal(
+          posts.find(
+            x =>
+              x.tenantId === fooTenant.tenantId &&
+              x.userId === fooTenant.actorId &&
+              x.categories.filter(c => c.tenantId === fooTenant.tenantId),
+          ),
+        );
+
+        await expectPostForTenant(fooFindOneResult, posts, fooTenant);
+        await expectPostForTenant(barFindOneByResult, posts, barTenant);
       },
     );
   });
