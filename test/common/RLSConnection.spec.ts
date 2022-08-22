@@ -1,15 +1,15 @@
 import { expect } from 'chai';
-import { DataSource, DataSourceOptions } from 'typeorm';
+import { TenancyModelOptions } from 'lib/interfaces';
+import { Category } from 'test/util/entity/Category';
+import { DataSource } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { RLSConnection, RLSPostgresQueryRunner } from '../../lib/common';
-import { TenancyModelOptions } from 'lib/interfaces';
+import { Post } from '../util/entity/Post';
 import {
   closeTestingConnections,
   reloadTestingDatabases,
-  setupSingleTestingConnection,
+  setupSingleTestingConnection
 } from '../util/test-utils';
-import { Post } from '../util/entity/Post';
-import { Category } from 'test/util/entity/Category';
 
 describe('RLSConnection', () => {
   let connection: RLSConnection;
