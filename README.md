@@ -112,3 +112,6 @@ export class AppService {
 Same as before, do not use the TypeORM functions directly from the `dataSource` as that will give you the default connection to the database, not the wrapped instance.
 
 For more specific examples, check the `test/nestjs/src`.
+
+# Typeorm >v0.3.0
+Since typeorm v0.3.0, the Connection class has been replaced by DataSource. This module still uses Connection as its language which is also helpful now to differenciate between the actual database connection (typeorm DataSource) and RLS wrapper (RLSConnection). However, if you want to be on par with typeorm terminalogy, there is an alias for `RLSConnection` called `RLSDataSource`. 
