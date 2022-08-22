@@ -114,4 +114,4 @@ export class RLSConnection extends DataSource {
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const RLSDatasource = RLSConnection;
+export const RLSDataSource = RLSConnection;
