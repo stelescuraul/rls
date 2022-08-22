@@ -8,7 +8,7 @@ import { Post } from '../util/entity/Post';
 import {
   closeTestingConnections,
   reloadTestingDatabases,
-  setupSingleTestingConnection
+  setupSingleTestingConnection,
 } from '../util/test-utils';
 
 describe('RLSConnection', () => {
