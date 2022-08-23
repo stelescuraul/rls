@@ -1,3 +1,16 @@
+# [2.0.0](https://github.com/Avallone-io/rls/compare/v1.4.0...v2.0.0) (2022-08-23)
+
+
+### Features
+
+* upgrade to typeorm v0.3.0 ([40d0812](https://github.com/Avallone-io/rls/commit/40d0812c4931ead28f744b69a585ae95d895a8fa))
+
+
+### BREAKING CHANGES
+
+* must use at least node v14, typeorm v0.3.0 and
+@nestjs/typeorm v8.1.0
+
 # [1.4.0](https://github.com/Avallone-io/rls/compare/v1.3.0...v1.4.0) (2022-08-08)
 
 

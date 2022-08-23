@@ -1,6 +1,6 @@
 {
   "name": "@avallone-io/rls",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "description": "Row level security package for TypeORM and NestJS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
