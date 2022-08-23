@@ -37,10 +37,10 @@ For example, assuming an express application:
 
 ```typescript
 app.use((req, res, next) => {
-  const connection = getConnection(); // get default typeorm connection
+  const dataSource = await new DataSource({...}).initialize(); // create a datasource and initialize it
 
   // get tenantId and actorId from somewhere (headers/token etc)
-  const rlsConnection = new RLSConnection(connection, {
+  const rlsConnection = new RLSConnection(dataSource, {
     actorId,
     tenantId,
   });
@@ -54,16 +54,18 @@ const userRepo = res.locals.connection.getRepository(User);
 await userRepo.find(); // will return only the results where the db rls policy applies
 ```
 
-In the above example, you'll have to work with the supplied connection. Calling TypeORM function directly will work with the original connection which is not RLS aware.
+In the above example, you'll have to work with the supplied connection. Calling TypeORM function directly will work with the original DataSource object which is not RLS aware.
 
 ## NestJS integration
 
 If you are using NestJS, this library provides helpers for making your connections and queries tenant aware.
 
-Create your TypeORM config and load the TypeORM module using `.forRoot`. Then you'll need to load the `RLSModule` with `.forRoot` where you'll define where to take the `tenantId` and `actorId` from. The second part is that you now need to replace the `TypeOrmModule.forFeature` with `RLSModule.forFeature`.
+Create your TypeORM config and load the TypeORM module using `.forRoot`. Then you'll need to load the `RLSModule` with `.forRoot` where you'll define where to take the `tenantId` and `actorId` from. The second part is that you now need to replace the `TypeOrmModule.forFeature` with `RLSModule.forFeature`. This should be a 1-to-1 replacement.
 You can inject non-entity dependent Modules and Providers. First array imports modules, second array injects providers.
 
 When using `RLSModule.forRoot` it will set your `scope` to `REQUEST`! Be sure you understand the implications of this and especially read about the request-scoped authentication strategy on [Nestjs docs](https://docs.nestjs.com/security/authentication#request-scoped-strategies).
+
+The `RLSModule.forRoot` accepts the factory funtion as async or non-async function.
 
 ```typescript
 app.controller.ts
@@ -71,7 +73,7 @@ app.controller.ts
 @Module({
   imports: [
     TypeOrmModule.forRoot(...),
-    RLSModule.forRoot([/*Module*/], [/*Service*/], (req: Request, /*serviceInstance*/) => {
+    RLSModule.forRoot([/*Module*/], [/*Service*/], async (req: Request, /*serviceInstance*/) => {
       // You can take the tenantId and actorId from headers/tokens etc
       const tenantId = req.headers['tenant_id'];
       const actorId = req.headers['actor_id'];
@@ -107,6 +109,9 @@ export class AppService {
 }
 ```
 
-Same as before, do not use the TypeORM functions directly (eg: `getConnection()`) as that will give you the default connection to the database, not the wrapped instance.
+Same as before, do not use the TypeORM functions directly from the `dataSource` as that will give you the default connection to the database, not the wrapped instance.
 
 For more specific examples, check the `test/nestjs/src`.
+
+# Typeorm >v0.3.0
+Since typeorm v0.3.0, the Connection class has been replaced by DataSource. This module still uses Connection as its language which is also helpful now to differenciate between the actual database connection (typeorm DataSource) and RLS wrapper (RLSConnection). However, if you want to be on par with typeorm terminalogy, there is an alias for `RLSConnection` called `RLSDataSource`. 

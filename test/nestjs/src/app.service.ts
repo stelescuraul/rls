@@ -10,7 +10,7 @@ export class AppService {
   constructor(
     @InjectRepository(Category)
     private categoryRepo: Repository<Category>,
-    @InjectRepository(PostRepository)
+    @Inject(PostRepository)
     private postRepo: PostRepository,
     @Inject(TENANT_CONNECTION)
     private connection: RLSConnection,
@@ -44,7 +44,7 @@ export class AppService {
     const qr = this.connection.createQueryRunner();
     await qr.startTransaction();
     const manager = qr.manager;
-    const category = await manager.findOne(Category, {});
+    const [category] = await manager.find(Category, {});
     const responseObject = { categoryId: category.id };
     await manager.remove(category);
     await qr.rollbackTransaction();

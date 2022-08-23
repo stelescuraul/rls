@@ -1,4 +1,4 @@
-import { Connection, EntityMetadata, ReplicationMode } from 'typeorm';
+import { EntityMetadata, ReplicationMode, DataSource } from 'typeorm';
 import { RLSPostgresDriver } from '../common/RLSPostgresDriver';
 import {
   ActorId,
@@ -7,18 +7,18 @@ import {
 } from '../interfaces/tenant-options.interface';
 import { RLSPostgresQueryRunner } from './RLSPostgresQueryRunner';
 
-export class RLSConnection extends Connection {
+export class RLSConnection extends DataSource {
   readonly driver: RLSPostgresDriver;
 
   tenantId: TenantId = null;
   actorId: ActorId = null;
 
   constructor(
-    connection: Connection,
+    dataSource: DataSource,
     tenancyModelOptions: TenancyModelOptions,
   ) {
-    super(connection.options);
-    Object.assign(this, connection);
+    super(dataSource.options);
+    Object.assign(this, dataSource);
     Object.assign(this.relationLoader, { connection: this });
 
     this.tenantId = tenancyModelOptions.tenantId;
@@ -97,9 +97,21 @@ export class RLSConnection extends Connection {
     return queryRunner;
   }
 
+  /**
+   * @deprecated use .destroy method instead
+   */
   close(): Promise<void> {
     throw new Error(
-      'Cannot close connection on a virtual connection. Use the original connection object to close the connection',
+      'Cannot close virtual connection. Use the original DataSource object to close it',
+    );
+  }
+
+  destroy(): Promise<void> {
+    throw new Error(
+      'Cannot destroy virtual connection. Use the original DataSource object to destoy it',
     );
   }
 }
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export const RLSDataSource = RLSConnection;

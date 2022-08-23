@@ -1,19 +1,19 @@
 import { expect } from 'chai';
-import { Connection, createConnection } from 'typeorm';
+import { TenancyModelOptions } from 'lib/interfaces';
+import { Category } from 'test/util/entity/Category';
+import { DataSource } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { RLSConnection, RLSPostgresQueryRunner } from '../../lib/common';
-import { TenancyModelOptions } from 'lib/interfaces';
+import { Post } from '../util/entity/Post';
 import {
   closeTestingConnections,
   reloadTestingDatabases,
   setupSingleTestingConnection,
 } from '../util/test-utils';
-import { Post } from '../util/entity/Post';
-import { Category } from 'test/util/entity/Category';
 
 describe('RLSConnection', () => {
   let connection: RLSConnection;
-  let originalConnection: Connection;
+  let originalConnection: DataSource;
 
   const tenantModelOptions: TenancyModelOptions = {
     actorId: 10,
@@ -27,7 +27,7 @@ describe('RLSConnection', () => {
       schemaCreate: true,
     });
 
-    originalConnection = await createConnection(connectionOptions);
+    originalConnection = await new DataSource(connectionOptions).initialize();
     connection = new RLSConnection(originalConnection, tenantModelOptions);
   });
   beforeEach(() => reloadTestingDatabases([connection]));
@@ -73,6 +73,7 @@ describe('RLSConnection', () => {
       'name',
       'options',
       'isConnected',
+      'isInitialized',
       'namingStrategy',
       'migrations',
       'subscribers',
@@ -96,7 +97,7 @@ describe('RLSConnection', () => {
     post.userId = tenantModelOptions.actorId as number;
     await postRepo.save(post);
 
-    const loadedPost = await postRepo.findOne(post.id);
+    const loadedPost = await postRepo.findOneBy({ id: post.id });
 
     loadedPost.should.be.instanceOf(Post);
     loadedPost.id.should.be.eql(post.id);
@@ -109,9 +110,27 @@ describe('RLSConnection', () => {
         originalConnection,
         tenantModelOptions,
       );
-      expect(tempConnection.close).to.throw(/Cannot close connection .*/);
-      expect(tempConnection.isConnected).to.be.true;
-      expect(originalConnection.isConnected).to.be.true;
+      expect(tempConnection.close).to.throw(
+        /Cannot close virtual connection.*/,
+      );
+      expect(tempConnection.isInitialized).to.be.true;
+      expect(originalConnection.isInitialized).to.be.true;
+      expect((originalConnection.driver as PostgresDriver).master.ending).to.be
+        .false;
+    });
+  });
+
+  describe('#destroy', () => {
+    it('throw error if trying to destroy connection on RLSConnection instance', async () => {
+      const tempConnection = new RLSConnection(
+        originalConnection,
+        tenantModelOptions,
+      );
+      expect(tempConnection.destroy).to.throw(
+        /Cannot destroy virtual connection.*/,
+      );
+      expect(tempConnection.isInitialized).to.be.true;
+      expect(originalConnection.isInitialized).to.be.true;
       expect((originalConnection.driver as PostgresDriver).master.ending).to.be
         .false;
     });
@@ -153,10 +172,9 @@ describe('RLSConnection', () => {
       await qr.rollbackTransaction();
       await qr.release();
 
-      return expect(postRepo.findOne(postId)).to.eventually.have.property(
-        'id',
-        postId,
-      );
+      return expect(
+        postRepo.findOne({ where: { id: postId } }),
+      ).to.eventually.have.property('id', postId);
     });
   });
 });

@@ -15,10 +15,9 @@ import { RLSConnection } from './common';
 import { TenancyModelOptions } from './interfaces/tenant-options.interface';
 import { TENANT_CONNECTION } from './rls.constants';
 import { createTypeormRLSProviders } from './rls.provider';
-import { Connection, ConnectionOptions } from 'typeorm';
-import { getCustomRepositoryEntity } from '@nestjs/typeorm/dist/helpers/get-custom-repository-entity';
+import { DataSource, DataSourceOptions } from 'typeorm';
 import { EntitiesMetadataStorage } from '@nestjs/typeorm/dist/entities-metadata.storage';
-import { DEFAULT_CONNECTION_NAME } from '@nestjs/typeorm/dist/typeorm.constants';
+import { DEFAULT_DATA_SOURCE_NAME } from '@nestjs/typeorm/dist/typeorm.constants';
 
 @Global()
 @Module({})
@@ -26,16 +25,12 @@ export class RLSModule {
   static forFeature(
     entities: EntityClassOrSchema[] = [],
     connection:
-      | Connection
-      | ConnectionOptions
-      | string = DEFAULT_CONNECTION_NAME,
+      | DataSource
+      | DataSourceOptions
+      | string = DEFAULT_DATA_SOURCE_NAME,
   ): DynamicModule {
     const providers = createTypeormRLSProviders(entities, connection);
-    const customRepositoryEntities = getCustomRepositoryEntity(entities);
-    EntitiesMetadataStorage.addEntitiesByConnection(connection, [
-      ...entities,
-      ...customRepositoryEntities,
-    ]);
+    EntitiesMetadataStorage.addEntitiesByDataSource(connection, [...entities]);
     return {
       module: RLSModule,
       providers: providers,
@@ -60,9 +55,9 @@ export class RLSModule {
   ): DynamicModule {
     const rlsProvider: Provider = {
       provide: TENANT_CONNECTION,
-      inject: [REQUEST, Connection, ...injectServices],
+      inject: [REQUEST, DataSource, ...injectServices],
       scope: Scope.REQUEST,
-      useFactory: async (request: Request, connection: Connection, ...args) => {
+      useFactory: async (request: Request, connection: DataSource, ...args) => {
         const tenantModelOptions: TenancyModelOptions = await extractTenant(
           request,
           ...args,
