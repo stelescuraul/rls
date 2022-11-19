@@ -1,7 +1,7 @@
 {
   "release": {
     "branches": [
-      "master"
+      "v1"
     ]
   },
   "plugins": [
@@ -25,7 +25,7 @@
       {
         "branchesConfig": [
           {
-            "pattern": "master",
+            "pattern": "v1",
             "notifyOnSuccess": true,
             "notifyOnFail": true
           }
