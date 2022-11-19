@@ -1,4 +1,4 @@
-import { expect } from 'chai';
+import { AssertionError, expect } from 'chai';
 import * as sinon from 'sinon';
 import {
   Connection,
@@ -519,6 +519,95 @@ describe('RLSPostgresQueryRunner', () => {
 
         await releaseRunners(createdRunners);
       });
+    });
+  });
+
+  describe('connection pool with size 1', () => {
+    const tenantDbUser = 'tenant_aware_user';
+    let singleConnection: Connection;
+    let fooRlsConnection: RLSConnection;
+    let singleQueryRunner: RLSPostgresQueryRunner;
+    let localDriver: RLSPostgresDriver;
+
+    before(async () => {
+      const tenantConnectionOptions = await setupSingleTestingConnection(
+        'postgres',
+        {
+          entities: [Post, Category],
+          logging: false,
+        },
+        {
+          ...configs[0],
+          name: 'tenantConnection',
+          extra: {
+            size: 1,
+          },
+          logging: false,
+        } as ConnectionOptions,
+      );
+
+      singleConnection = await createConnection(tenantConnectionOptions);
+      fooRlsConnection = new RLSConnection(singleConnection, fooTenant);
+      localDriver = fooRlsConnection.driver;
+    });
+
+    beforeEach(async () => {
+      singleQueryRunner = new RLSPostgresQueryRunner(
+        localDriver,
+        'master',
+        fooTenant,
+      );
+
+      await createTeantUser(migrationConnection, tenantDbUser);
+      await setupMultiTenant(migrationConnection, tenantDbUser);
+      await setQueryRunnerRole(singleQueryRunner, tenantDbUser);
+      await createData(fooTenant, barTenant, migrationConnection);
+    });
+
+    afterEach(async () => {
+      await resetMultiTenant(migrationConnection, tenantDbUser);
+      await singleQueryRunner.release();
+    });
+
+    after(async () => await closeTestingConnections([singleConnection]));
+
+    it('should not persist the settings in connection from the pool', async () => {
+      // Force throwing an error in the query
+      await expect(singleQueryRunner.query('select * from non_existing_table'))
+        .to.eventually.be.rejectedWith(
+          `relation "non_existing_table" does not exist`,
+        )
+        .and.be.instanceOf(QueryFailedError);
+      await singleQueryRunner.release();
+
+      // Since we released the queryrunner back in the pool, when we create a new one
+      // we in fact receive the one used above from pg pool
+      const queryRunner2 = singleConnection.createQueryRunner();
+
+      /**
+       * Since this query is not RLS bound, this will return the set tenant
+       * If the reset executes (therefore not leaking),
+       * the tenantId and actorId properties should be empty
+       */
+      const [{ tenantId }] = await queryRunner2.query(
+        `select current_setting('rls.tenant_id') as "tenantId"`,
+      );
+      expect(tenantId).to.be.empty;
+
+      const [{ actorId }] = await queryRunner2.query(
+        `select current_setting('rls.actor_id') as "actorId"`,
+      );
+      expect(actorId).to.be.empty;
+
+      /**
+       * Executing a query that is RLS bound should fail because
+       * tenant_id and actor_id needed by the RLS policy should not
+       * be set. They are only set if the connection is not reset correctly
+       */
+      await expect(
+        queryRunner2.query('select * from category'),
+      ).to.eventually.be.rejectedWith(/invalid input syntax/);
+      await queryRunner2.release();
     });
   });
 });
