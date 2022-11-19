@@ -172,6 +172,7 @@ export function setupSingleTestingConnection(
       namingStrategy: options.namingStrategy
         ? options.namingStrategy
         : undefined,
+      logging: options.logging ?? false,
     },
     typeormConfig ? [typeormConfig] : undefined,
   );
