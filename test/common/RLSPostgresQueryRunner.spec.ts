@@ -1,4 +1,4 @@
-import { AssertionError, expect } from 'chai';
+import { expect } from 'chai';
 import * as sinon from 'sinon';
 import {
   Connection,
@@ -13,6 +13,8 @@ import {
   RLSPostgresQueryRunner,
 } from '../../lib/common';
 import { TenancyModelOptions } from '../interfaces';
+import { Category } from '../util/entity/Category';
+import { Post } from '../util/entity/Post';
 import {
   createData,
   createRunners,
@@ -32,8 +34,6 @@ import {
   reloadTestingDatabases,
   setupSingleTestingConnection,
 } from '../util/test-utils';
-import { Category } from '../util/entity/Category';
-import { Post } from '../util/entity/Post';
 const configs = getTypeOrmConfig();
 
 describe('RLSPostgresQueryRunner', () => {
