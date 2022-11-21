@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/Avallone-io/rls/compare/v2.0.0...v2.0.1) (2022-11-21)
+
+
+### Bug Fixes
+
+* rls settings on connection in pg pool ([f97de54](https://github.com/Avallone-io/rls/commit/f97de54ad399af0f9ee204e555f0183682c31a36))
+
 # [2.0.0](https://github.com/Avallone-io/rls/compare/v1.4.0...v2.0.0) (2022-08-23)
 
 
