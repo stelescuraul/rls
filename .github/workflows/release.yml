@@ -21,7 +21,7 @@ jobs:
     - name: Set project name
       run: echo "SEMANTIC_RELEASE_PACKAGE=$(jq -r '.name' package.json)" >> $GITHUB_ENV
     - name: Release
-      run: npx semantic-release --dry-run
+      run: npx semantic-release --dry-run --ci
       env:
         GH_TOKEN: ${{ secrets.GH_TOKEN }}
         NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
