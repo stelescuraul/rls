@@ -38,12 +38,20 @@ export class RLSPostgresQueryRunner extends PostgresQueryRunner {
       );
     }
 
-    const result = await super.query(queryString, params, useStructuredResult);
+    let result: Promise<any>;
+    let error: Error;
+    try {
+      result = await super.query(queryString, params, useStructuredResult);
+    } catch (err) {
+      error = err;
+    }
 
     if (!this.isTransactionCommand) {
       await super.query(`reset rls.actor_id; reset rls.tenant_id;`);
     }
-    return result;
+
+    if (error) throw error;
+    else return result;
   }
 
   async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
