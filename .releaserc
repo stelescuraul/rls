@@ -1,10 +1,8 @@
 {
-  "release": {
-    "branches": [
-      "master",
-      "v1"
-    ]
-  },
+  "branches": [
+    "master",
+    "1.x"
+  ],
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
@@ -31,7 +29,7 @@
             "notifyOnFail": true
           },
           {
-            "pattern": "v1",
+            "pattern": "1.x",
             "notifyOnSuccess": true,
             "notifyOnFail": true
           }
