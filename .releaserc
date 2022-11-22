@@ -1,6 +1,7 @@
 {
   "release": {
     "branches": [
+      "master",
       "v1"
     ]
   },
@@ -24,6 +25,11 @@
       "semantic-release-slack-bot",
       {
         "branchesConfig": [
+          {
+            "pattern": "master",
+            "notifyOnSuccess": true,
+            "notifyOnFail": true
+          },
           {
             "pattern": "v1",
             "notifyOnSuccess": true,
