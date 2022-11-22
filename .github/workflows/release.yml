@@ -44,7 +44,7 @@ jobs:
         run: npm ci
       - name: Set project name
         run: echo "SEMANTIC_RELEASE_PACKAGE=$(jq -r '.name' package.json)" >> $GITHUB_ENV
-      - name: Check if there is a new release
+      - name: Get release version if there is one
         run: echo "RELEASE_VERSION=$(npx semantic-release --dry-run | grep -oE 'Published release [0-9\.]+ on \w+ channel' | grep -oE '[0-9\.]+)' >> $GITHUB_ENV
       - name: Release to github registry
         run: npx semantic-release
