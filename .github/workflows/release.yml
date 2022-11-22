@@ -50,9 +50,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK: ${{ secrets.SLACK_SEMANTIC_RELEASE_WEBHOOK }}
+          NPM_CONFIG_REGISTRY: https://npm.pkg.github.com
       - name: Set npm registry to npm
         run: npm config set @avallone-io:registry https://registry.npmjs.org
       - name: Npm registry authentication
         run: npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
       - name: Release to NPM
-        run: npm publish --access public
+        run: npx semantic-release --dry-run
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_SEMANTIC_RELEASE_WEBHOOK }}
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
