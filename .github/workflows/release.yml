@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Check commit messages
-        run: npx commitlint --from origin/master
+        run: npx commitlint --from origin/1.x
       - name: Check linting
         run: npm run lint
       - name: Build the project
@@ -44,6 +44,13 @@ jobs:
         run: npm ci
       - name: Set project name
         run: echo "SEMANTIC_RELEASE_PACKAGE=$(jq -r '.name' package.json)" >> $GITHUB_ENV
+      - name: Get release version if there is one
+        run: echo "RELEASE_VERSION=$(npx semantic-release --dry-run | grep -oE 'Published release [0-9\.]+ on \w+ channel' | grep -oE '[0-9\.]+')" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_SEMANTIC_RELEASE_WEBHOOK }}
+          NPM_CONFIG_REGISTRY: https://npm.pkg.github.com
       - name: Release to github registry
         run: npx semantic-release
         env:
@@ -56,4 +63,5 @@ jobs:
       - name: Npm registry authentication
         run: npm set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
       - name: Release to NPM
+        if: ${{ env.RELEASE_VERSION != '' }}
         run: npm publish --access public
