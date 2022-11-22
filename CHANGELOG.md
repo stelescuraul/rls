@@ -1,3 +1,11 @@
+## [1.4.1](https://github.com/Avallone-io/rls/compare/v1.4.0...v1.4.1) (2022-11-22)
+
+
+### Bug Fixes
+
+* rls settings on connection in pg pool ([768c27a](https://github.com/Avallone-io/rls/commit/768c27a9b522582f60c6cf2f638d0e84d64cb51b))
+* trigger release dry-run ([ec1a2d8](https://github.com/Avallone-io/rls/commit/ec1a2d8154fb919a5a6347f759d0519986185b41))
+
 # [1.4.0](https://github.com/Avallone-io/rls/compare/v1.3.0...v1.4.0) (2022-08-08)
 
 
