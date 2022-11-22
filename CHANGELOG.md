@@ -1,3 +1,10 @@
+## [2.0.3](https://github.com/Avallone-io/rls/compare/v2.0.2...v2.0.3) (2022-11-22)
+
+
+### Bug Fixes
+
+* trigger release on npm ([ba03cd9](https://github.com/Avallone-io/rls/commit/ba03cd9f7c6fe5b44dcabecd8331b1bf581d79eb))
+
 ## [2.0.2](https://github.com/Avallone-io/rls/compare/v2.0.1...v2.0.2) (2022-11-22)
 
 
