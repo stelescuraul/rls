@@ -1,5 +1,5 @@
-[![Build And Test](https://github.com/Avallone-io/rls/actions/workflows/build-and-test.yml/badge.svg?branch=v1)](https://github.com/Avallone-io/rls/actions/workflows/build-and-test.yml)
-[![.github/workflows/release.yml](https://github.com/Avallone-io/rls/actions/workflows/release.yml/badge.svg?branch=v1)](https://github.com/Avallone-io/rls/actions/workflows/release.yml)
+[![Build And Test](https://github.com/Avallone-io/rls/actions/workflows/build-and-test.yml/badge.svg?branch=1.x)](https://github.com/Avallone-io/rls/actions/workflows/build-and-test.yml)
+[![.github/workflows/release.yml](https://github.com/Avallone-io/rls/actions/workflows/release.yml/badge.svg?branch=1.x)](https://github.com/Avallone-io/rls/actions/workflows/release.yml)
 
 # Description
 
