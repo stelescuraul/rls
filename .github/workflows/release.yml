@@ -44,7 +44,7 @@ jobs:
         run: npm ci
       - name: Set project name
         run: echo "SEMANTIC_RELEASE_PACKAGE=$(jq -r '.name' package.json)" >> $GITHUB_ENV
-      - name: Release
+      - name: Release to github registry
         run: npx semantic-release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
