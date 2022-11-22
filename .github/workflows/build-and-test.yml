@@ -1,14 +1,11 @@
 name: Build And Test
 
 on:
-  push:
-    branches: [ v1 ]
   pull_request:
-    branches: [ v1 ]
+    branches: [master, v1]
 
 jobs:
   build-and-test:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -16,20 +13,20 @@ jobs:
         node-version: [12.x, 14.x, 16.x]
 
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: Install dependencies
-      run: npm ci
-    - name: Check commit messages
-      run: npx commitlint --from origin/v1
-    - name: Check linting
-      run: npm run lint
-    - name: Build the project
-      run: npm run build --if-present
-    - name: Run the tests
-      run: npm run test
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install dependencies
+        run: npm ci
+      - name: Check commit messages
+        run: npx commitlint --from origin/master
+      - name: Check linting
+        run: npm run lint
+      - name: Build the project
+        run: npm run build --if-present
+      - name: Run the tests
+        run: npm run test
