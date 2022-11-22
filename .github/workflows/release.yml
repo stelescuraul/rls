@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Check commit messages
-        run: npx commitlint --from origin/master
+        run: npx commitlint --from origin/1.x
       - name: Check linting
         run: npm run lint
       - name: Build the project
