@@ -19,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Avallone-io/rls.git"
+    "url": "git@github.com:Avallone-io/rls.git"
   },
   "author": "Raul Stelescu",
   "license": "ISC",
