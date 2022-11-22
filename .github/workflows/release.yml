@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-          ref: github.workflow.ref_name
+          ref: ${{github.workflow.ref_name}}
       - name: Install
         run: npm ci
       - name: Set project name
