@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    branches: [master, v1]
+    branches: [master, 1.x]
 
 jobs:
   build-and-test:
