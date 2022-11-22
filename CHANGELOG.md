@@ -1,3 +1,10 @@
+## [2.0.2](https://github.com/Avallone-io/rls/compare/v2.0.1...v2.0.2) (2022-11-22)
+
+
+### Bug Fixes
+
+* trigger latest release ([4e197b1](https://github.com/Avallone-io/rls/commit/4e197b1c0a9849846ba6ea4f2579045fbc1a37a9))
+
 ## [2.0.1](https://github.com/Avallone-io/rls/compare/v2.0.0...v2.0.1) (2022-11-21)
 
 
