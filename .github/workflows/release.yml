@@ -45,7 +45,12 @@ jobs:
       - name: Set project name
         run: echo "SEMANTIC_RELEASE_PACKAGE=$(jq -r '.name' package.json)" >> $GITHUB_ENV
       - name: Get release version if there is one
-        run: echo "RELEASE_VERSION=$(npx semantic-release --dry-run | grep -oE 'Published release [0-9\.]+ on \w+ channel' | grep -oE '[0-9\.]+)' >> $GITHUB_ENV
+        run: echo "RELEASE_VERSION=$(npx semantic-release --dry-run | grep -oE 'Published release [0-9\.]+ on \w+ channel' | grep -oE '[0-9\.]+')" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_SEMANTIC_RELEASE_WEBHOOK }}
+          NPM_CONFIG_REGISTRY: https://npm.pkg.github.com
       - name: Release to github registry
         run: npx semantic-release
         env:
