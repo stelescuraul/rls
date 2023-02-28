@@ -46,7 +46,7 @@ export class RLSPostgresQueryRunner extends PostgresQueryRunner {
       error = err;
     }
 
-    if (!this.isTransactionCommand) {
+    if (!this.isTransactionCommand && !(this.isTransactionActive && error)) {
       await super.query(`reset rls.actor_id; reset rls.tenant_id;`);
     }
 
