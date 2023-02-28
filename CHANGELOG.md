@@ -1,3 +1,10 @@
+## [2.0.4](https://github.com/Avallone-io/rls/compare/v2.0.3...v2.0.4) (2023-02-28)
+
+
+### Bug Fixes
+
+* skip resetting RLS on errored transactions ([#213](https://github.com/Avallone-io/rls/issues/213)) ([8ac921c](https://github.com/Avallone-io/rls/commit/8ac921c5de382f7647c4743ccd236b8805cfa415))
+
 ## [2.0.3](https://github.com/Avallone-io/rls/compare/v2.0.2...v2.0.3) (2022-11-22)
 
 
