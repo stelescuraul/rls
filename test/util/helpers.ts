@@ -135,6 +135,18 @@ export function runQueryTests(
     );
   });
 
+  it('throws correct error in a failed transactional query', async () => {
+    await queryRunner.startTransaction();
+    await expect(queryRunner.query(`'foo'`)).to.be.rejectedWith(
+      `syntax error at or near "'foo'"`,
+    );
+    await queryRunner.rollbackTransaction();
+
+    expect(queryPrototypeSpy).not.to.have.been.calledWith(
+      `reset rls.actor_id; reset rls.tenant_id;`,
+    );
+  });
+
   it('does not add ghost query runners to the driver', () => {
     expect(queryRunner.driver.connectedQueryRunners).to.have.lengthOf(0);
   });
