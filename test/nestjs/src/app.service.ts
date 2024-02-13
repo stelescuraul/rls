@@ -28,7 +28,25 @@ export class AppService {
     return this.categoryRepo.find();
   }
 
-  async getPosts() {
+  async getPosts(useStream?: boolean) {
+    if (useStream) {
+      const result = [];
+      const stream = await this.postRepo.createQueryBuilder('post').stream();
+      await new Promise<void>((resolve, reject) => {
+        stream.on('data', (data: any) => {
+          //Query builder does not format the output the same way that the repository does
+          result.push({
+            id: data.post_id,
+            tenantId: data.post_tenantId,
+            title: data.post_title,
+            userId: data.post_userId,
+          });
+        });
+        stream.on('error', reject);
+        stream.on('end', resolve);
+      });
+      return result;
+    }
     return this.postRepo.read();
   }
 

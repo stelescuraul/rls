@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
@@ -11,8 +11,8 @@ export class AppController {
   }
 
   @Get('/posts')
-  getPosts(): Promise<any> {
-    return this.appService.getPosts();
+  getPosts(@Query('useStream') useStream?: boolean): Promise<any> {
+    return this.appService.getPosts(useStream);
   }
 
   @Get('/categories')

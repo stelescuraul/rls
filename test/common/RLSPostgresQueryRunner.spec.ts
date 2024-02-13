@@ -137,6 +137,179 @@ describe('RLSPostgresQueryRunner', () => {
     });
   });
 
+  describe('#stream', () => {
+    let querySpy: sinon.SinonSpy;
+
+    beforeEach(() => {
+      querySpy = sinon.spy(PostgresQueryRunner.prototype, 'query');
+    });
+
+    afterEach(async () => {
+      sinon.restore();
+    });
+
+    it('sets and resets the tenant id', async () => {
+      await new Promise<void>(async (resolve, reject) => {
+        const stream = await queryRunner.stream(
+          `select 'foo'`,
+          undefined,
+          resolve,
+          reject,
+        );
+        expect(querySpy).to.have.been.calledOnceWith(
+          `set "rls.tenant_id" = '${fooTenant.tenantId}'; set "rls.actor_id" = '${fooTenant.actorId}';`,
+        );
+        stream.on('data', () => {
+          //do nothing
+        });
+      });
+      expect(querySpy).to.have.been.calledWith(
+        `reset rls.actor_id; reset rls.tenant_id;`,
+      );
+    });
+
+    it('is called with the correct parameters', async () => {
+      const streamSpy = sinon.spy(PostgresQueryRunner.prototype, 'stream');
+
+      await new Promise<void>(async (resolve, reject) => {
+        const stream = await queryRunner.stream(
+          `select $1`,
+          ['foo'],
+          resolve,
+          reject,
+        );
+        expect(querySpy).to.have.been.calledOnceWith(
+          `set "rls.tenant_id" = '${fooTenant.tenantId}'; set "rls.actor_id" = '${fooTenant.actorId}';`,
+        );
+        stream.on('data', () => {
+          //do nothing
+        });
+      });
+      expect(querySpy).to.have.been.calledWith(
+        `reset rls.actor_id; reset rls.tenant_id;`,
+      );
+      expect(streamSpy).to.have.been.calledOnceWith('select $1', ['foo']);
+    });
+
+    it('resets the tenant id if there is an error with the query', async () => {
+      await expect(
+        new Promise<void>(async (resolve, reject) => {
+          const stream = await queryRunner.stream(
+            `select from invalid_table_name`,
+            undefined,
+            resolve,
+            reject,
+          );
+          stream.on('data', () => {
+            //do nothing
+          });
+        }),
+      ).to.be.rejectedWith('relation "invalid_table_name" does not exist');
+
+      expect(querySpy).to.have.been.calledWith(
+        `set "rls.tenant_id" = '${fooTenant.tenantId}'; set "rls.actor_id" = '${fooTenant.actorId}';`,
+      );
+
+      expect(querySpy).to.have.been.calledWith(
+        `reset rls.actor_id; reset rls.tenant_id;`,
+      );
+    });
+
+    it('does not reset the tenant id if there is an error with the query in a transaction', async () => {
+      await queryRunner.startTransaction();
+      await expect(
+        new Promise<void>(async (resolve, reject) => {
+          const stream = await queryRunner.stream(
+            `select from invalid_table_name`,
+            undefined,
+            resolve,
+            reject,
+          );
+          stream.on('data', () => {
+            //do nothing
+          });
+        }),
+      ).to.be.rejectedWith('relation "invalid_table_name" does not exist');
+      await queryRunner.rollbackTransaction();
+
+      expect(querySpy).to.have.been.calledWith(
+        `set "rls.tenant_id" = '${fooTenant.tenantId}'; set "rls.actor_id" = '${fooTenant.actorId}';`,
+      );
+
+      expect(querySpy).not.to.have.been.calledWith(
+        `reset rls.actor_id; reset rls.tenant_id;`,
+      );
+    });
+
+    it('resets the tenant id if there is an error with the stream', async () => {
+      const streamStub = sinon.stub(PostgresQueryRunner.prototype, 'stream');
+      streamStub.callsFake(async () => {
+        throw new Error('error for test');
+      });
+
+      await expect(
+        new Promise<void>(async (resolve, reject) => {
+          try {
+            const stream = await queryRunner.stream(
+              `select 'foo'`,
+              undefined,
+              resolve,
+              reject,
+            );
+            stream.on('data', () => {
+              //do nothing
+            });
+          } catch (err) {
+            reject(err);
+          }
+        }),
+      ).to.be.rejectedWith('error for test');
+
+      expect(querySpy).to.have.been.calledWith(
+        `set "rls.tenant_id" = '${fooTenant.tenantId}'; set "rls.actor_id" = '${fooTenant.actorId}';`,
+      );
+
+      expect(querySpy).to.have.been.calledWith(
+        `reset rls.actor_id; reset rls.tenant_id;`,
+      );
+    });
+
+    it('does not reset the tenant id if there is an error with the stream in a transaction', async () => {
+      const streamStub = sinon.stub(PostgresQueryRunner.prototype, 'stream');
+      streamStub.callsFake(async () => {
+        throw new Error('error for test');
+      });
+
+      await queryRunner.startTransaction();
+      await expect(
+        new Promise<void>(async (resolve, reject) => {
+          try {
+            const stream = await queryRunner.stream(
+              `select 'foo'`,
+              undefined,
+              resolve,
+              reject,
+            );
+            stream.on('data', () => {
+              //do nothing
+            });
+          } catch (err) {
+            reject(err);
+          }
+        }),
+      ).to.be.rejectedWith('error for test');
+      await queryRunner.rollbackTransaction();
+
+      expect(querySpy).to.have.been.calledWith(
+        `set "rls.tenant_id" = '${fooTenant.tenantId}'; set "rls.actor_id" = '${fooTenant.actorId}';`,
+      );
+
+      expect(querySpy).not.to.have.been.calledWith(
+        `reset rls.actor_id; reset rls.tenant_id;`,
+      );
+    });
+  });
+
   describe('multi-tenant', () => {
     const tenantDbUser = 'tenant_aware_user';
     let categories: Category[];
