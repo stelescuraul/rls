@@ -1,5 +1,15 @@
+##### Table of Contents 
+[Description](#description)
+[Install](#install)
+[Usage](#usage)
+[Local Testing](#localtesting)
+[Publish Package](#publish)
+
+
 [![Build And Test](https://github.com/Avallone-io/rls/actions/workflows/build-and-test.yml/badge.svg?branch=master)](https://github.com/Avallone-io/rls/actions/workflows/build-and-test.yml)
 [![.github/workflows/release.yml](https://github.com/Avallone-io/rls/actions/workflows/release.yml/badge.svg?branch=master)](https://github.com/Avallone-io/rls/actions/workflows/release.yml)
+
+<a href="description"/>
 
 # Description
 
@@ -7,9 +17,13 @@ Row level security utilitary package to apply to NestJS and TypeORM.
 
 This solution does not work by having multiple connections to database (eg: one connection / tenant). Instead, this solution works by applying the database policies for RLS as described in [this aws blog post](https://aws.amazon.com/blogs/database/multi-tenant-data-isolation-with-postgresql-row-level-security/) (under the **_Alternative approach_**).
 
+<a href="install"/>
+
 # Install
 
-> $ npm install @avallone-io/rls
+> $ npm install @nestwealth/nw-rls@{$version}
+
+<a href="usage"/>
 
 # Usage
 
@@ -114,4 +128,87 @@ Same as before, do not use the TypeORM functions directly from the `dataSource` 
 For more specific examples, check the `test/nestjs/src`.
 
 # Typeorm >v0.3.0
-Since typeorm v0.3.0, the Connection class has been replaced by DataSource. This module still uses Connection as its language which is also helpful now to differenciate between the actual database connection (typeorm DataSource) and RLS wrapper (RLSConnection). However, if you want to be on par with typeorm terminalogy, there is an alias for `RLSConnection` called `RLSDataSource`. 
+Since typeorm v0.3.0, the Connection class has been replaced by DataSource. This module still uses Connection as its language which is also helpful now to differenciate between the actual database connection (typeorm DataSource) and RLS wrapper (RLSConnection). However, if you want to be on par with typeorm terminalogy, there is an alias for `RLSConnection` called `RLSDataSource`.
+
+<a href="localtesting"/>
+
+# Local Testing
+When testing a package locally, there have been issues symlinking using `npm/yarn link`. 
+Alternatelly you can use `yalc`[https://github.com/wclr/yalc]
+
+How to use `yalc`
+Note: `@nestwealth/nw-rls` is the local dependency package and `nacs-onboarding` is the dependent package
+
+1. Install yalc globally
+```
+npm i -g yalc
+```
+
+2. From `nw-rls` 
+```
+yalc publish
+```
+
+3. In `nacs-onboarding`
+```
+yalc add @nestwealth/nw-rls@{version}
+```
+
+4. Install any dependencies in `nacs-onboarding` if required
+```
+npm i
+```
+
+5. If you make any changes to `nw-rls` while testign locally
+```
+yalc push
+```
+
+6. To remove package from `nacs-onboarding`
+```
+yalc remove @nestwealth/nw-rls@{version}
+```
+
+<a href="publish"/>
+
+# Publish Package
+
+Before deploying, check the following items:
+
+-   Do you have an npm account?
+-   Does your npm account have write permissions for the [nw-rls package](https://www.npmjs.com/package/@nestwealth/nw-rls) package?
+-   Are you locally authenticated as your npm user (use `npm whoami` to check, and `npm adduser` to log in)
+-   Are you using the correct node version, using `nvm use` as noted above?
+
+To deploy your changes to the `nw-rls`, ensure your changes have been merged into the `develop` branch of the `nw-rls` repository. Then, locally switch to the `develop` branch and run `git pull`.
+
+**NOTE:** The published version will reflect your current local state, so please ensure you pull all changes in the `develop` branch before publishing
+
+To update the @nestwealth/nw-rls version and publish, run the following commands (selecting the version type based on [semantic versioning](https://docs.npmjs.com/about-semantic-versioning))
+
+```sh
+npm version [patch | minor | major]
+npm publish
+```
+
+**Note:** The `prepublish` script will automatically be run when you run the `npm publish` command. The prepublish script removes any previous builds and builds both the browser and node versions.
+
+Now that the version has been published, create a new branch locally by running the following command (replacing `[NEW_VERSION]` with the newly published version number):
+
+`git checkout -b "chore/bump-version-[NEW_VERSION]"`
+
+Push this new branch, make a PR into `develop` with the change to package.json and share a link for peer review.
+
+Once a new version of the package is published, any repository that uses this package will need to have its `package.json` updated in order to use the new version. For  `nacs-on-boarding`, complete following steps:
+
+Create a new branch in `nacs-on-boarding` by running the following in the root directory of `nacs-on-boarding`:
+
+`git checkout -b "chore/bump-version-[NEW_VERSION]"`
+
+Install the new version of the @nestwealth/nw-rls by running the following in the root directory of `nacs-on-boarding`:
+
+`npm i --save-exact @nestwealth/nw-rls@[NEW_VERSION]`
+
+Push this new branch, make a PR into `develop` with the change to package.json and share a link for peer review.
+
+Once merged, this will automatically deploy a new version of `nacs-on-boarding` to the development environment using the most up to date version of the @nestwealth/nw-rls, incorporating the latest changes to the onboarding form configuration.

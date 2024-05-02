@@ -1,7 +1,7 @@
 {
-  "name": "@avallone-io/rls",
-  "version": "2.0.4",
-  "description": "Row level security package for TypeORM and NestJS",
+  "name": "@nestwealth/nw-rls",
+  "version": "1.0.0",
+  "description": "Row level security package for TypeORM and NestJS, this package is forked from the original @avallone-io/rls",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -19,9 +19,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:Avallone-io/rls.git"
+    "url": "git@github.com:nestwealth/nw-rls.git"
   },
-  "author": "Raul Stelescu",
+  "author": "Nest Wealth",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/Avallone-io/rls/issues"
@@ -31,11 +31,11 @@
     "@commitlint/cli": "^17.0.3",
     "@commitlint/config-conventional": "^17.0.3",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
-    "@nestjs/common": "^9.0.11",
-    "@nestjs/core": "^9.0.11",
-    "@nestjs/platform-express": "^9.0.11",
-    "@nestjs/testing": "^9.0.11",
-    "@nestjs/typeorm": "^9.0.1",
+    "@nestjs/common": "^10.1.2",
+    "@nestjs/core": "^10.1.2",
+    "@nestjs/platform-express": "^10.1.2",
+    "@nestjs/testing": "^10.1.2",
+    "@nestjs/typeorm": "^10.0.0",
     "@semantic-release/changelog": "^6.0.1",
     "@semantic-release/git": "^10.0.1",
     "@types/chai": "^4.3.3",
@@ -76,9 +76,9 @@
     "typeorm": "~0.3.0"
   },
   "optionalDependencies": {
-    "@nestjs/common": "^8.4.0 || ^9.0.0",
-    "@nestjs/core": "^8.4.0 || ^9.0.0",
-    "@nestjs/typeorm": "^8.1.0 || ^9.0.0",
+    "@nestjs/common": "^10.1.2",
+    "@nestjs/core": "^10.1.2",
+    "@nestjs/typeorm": "^10.0.0",
     "express": "^4.18.1"
   },
   "nyc": {
