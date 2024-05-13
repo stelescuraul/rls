@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import sinon = require('sinon');
-import { DataSource, DataSourceOptions } from 'typeorm';
+import { DataSource, DataSourceOptions, ILike } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import { RLSConnection } from '../../lib/common';
@@ -232,6 +232,38 @@ describe('EntityManager', function () {
             expectTenantData(expect(cat), categories, 1, fooTenant),
           );
         });
+    });
+
+    it('should work on multiple entities', async () => {
+      const fooEntityManager = fooConnection.createEntityManager();
+
+      const entitiesToSave = new Array(1000).fill(
+        Category.create({
+          tenantId: fooTenant.tenantId as number,
+          name: 'Test multiple entities',
+        }),
+      );
+
+      await fooEntityManager.save(entitiesToSave);
+      const categoryEntities = await fooEntityManager.find(Category, {
+        where: {
+          name: ILike('Test multiple entities'),
+        },
+      });
+
+      expect(categoryEntities).to.have.lengthOf(1000);
+      const promises = categoryEntities.map((cat, indx) => {
+        cat.name += ' ' + indx;
+        return fooEntityManager.save(cat);
+      });
+      const results = await Promise.all(promises);
+      expect(results).to.have.lengthOf(1000);
+
+      const expectedNames = entitiesToSave.map(
+        (e, indx) => `${e.name} ${indx}`,
+      );
+
+      expect(results.map(r => r.name)).to.have.members(expectedNames);
     });
   });
 
