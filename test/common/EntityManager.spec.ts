@@ -218,6 +218,23 @@ describe('EntityManager', function () {
     );
   });
 
+  describe('same entityManager with multiple queries', () => {
+    it('should apply RLS queries to each find', async () => {
+      const fooEntityManager = fooConnection.createEntityManager();
+
+      const promises = new Array(10000)
+        .fill(null)
+        .map(() => fooEntityManager.find(Category));
+      await expect(Promise.all(promises))
+        .to.eventually.be.fulfilled.and.have.lengthOf(10000)
+        .and.to.satisfy((arr: any[]) => {
+          return arr.every(cat =>
+            expectTenantData(expect(cat), categories, 1, fooTenant),
+          );
+        });
+    });
+  });
+
   describe('queued queries', () => {
     let queryPrototypeSpy: sinon.SinonSpy;
     let connectedQueryRunnersStub: sinon.SinonStub;
@@ -329,6 +346,54 @@ describe('EntityManager', function () {
       );
 
       return Promise.all([fooProm, barProm]);
+    });
+  });
+
+  describe('connection pool with size 1', () => {
+    let singleConnection: DataSource;
+    let fooRlsSingleConnection: RLSConnection;
+
+    before(async () => {
+      const tenantConnectionOptions = setupSingleTestingConnection(
+        'postgres',
+        {
+          entities: [Post, Category],
+        },
+        {
+          ...configs[0],
+          name: 'tenantConnection',
+          extra: {
+            size: 1,
+          },
+          username: tenantDbUser,
+          logging: false,
+        } as DataSourceOptions,
+      );
+
+      singleConnection = await new DataSource(
+        tenantConnectionOptions,
+      ).initialize();
+      fooRlsSingleConnection = new RLSConnection(singleConnection, fooTenant);
+    });
+
+    after(async () => await closeTestingConnections([singleConnection]));
+
+    describe('same entityManager with multiple queries', () => {
+      it('should apply RLS queries to each find', async () => {
+        const fooEntityManager = fooRlsSingleConnection.createEntityManager();
+
+        const promises = new Array(1000)
+          .fill(null)
+          .map(() => fooEntityManager.find(Category));
+
+        await expect(Promise.all(promises))
+          .to.eventually.be.fulfilled.and.have.lengthOf(1000)
+          .and.to.satisfy((arr: any[]) => {
+            return arr.every(cat =>
+              expectTenantData(expect(cat), categories, 1, fooTenant),
+            );
+          });
+      });
     });
   });
 });
