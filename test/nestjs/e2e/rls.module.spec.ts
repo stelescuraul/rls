@@ -93,6 +93,14 @@ describe('RLS Module', () => {
       });
   });
 
+  it('GET /posts using stream for foo tenant', async () => {
+    return getAuthRequest(app, 'get', '/posts?useStream=true', fooTenant)
+      .expect(200)
+      .expect(res => {
+        expectTenantData(expect(res.body), posts, 1, fooTenant, true);
+      });
+  });
+
   it('GET /categories for bar tenant', () => {
     return getAuthRequest(app, 'get', '/categories', barTenant)
       .expect(200)

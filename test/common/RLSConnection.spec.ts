@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { RLSConnection, RLSPostgresQueryRunner } from '../../lib/common';
 import { Post } from '../util/entity/Post';
+import { Transform } from 'stream';
 import {
   closeTestingConnections,
   reloadTestingDatabases,
@@ -102,6 +103,110 @@ describe('RLSConnection', () => {
     loadedPost.should.be.instanceOf(Post);
     loadedPost.id.should.be.eql(post.id);
     loadedPost.title.should.be.eql('Foo');
+  });
+
+  it('should save and return the Post using streams', async () => {
+    const postRepo = connection.getRepository(Post);
+    const post = postRepo.create();
+    post.title = 'Foo';
+    post.tenantId = tenantModelOptions.tenantId as number;
+    post.userId = tenantModelOptions.actorId as number;
+    await postRepo.save(post);
+
+    const postStream = await postRepo
+      .createQueryBuilder('post')
+      .where({ id: post.id })
+      .stream();
+
+    const loadedPosts = await new Promise<any>((resolve, reject) => {
+      const result = [];
+      postStream.on('data', data => result.push(data));
+      postStream.on('end', () => resolve(result));
+      postStream.on('error', reject);
+    });
+
+    loadedPosts.should.have.lengthOf(1);
+    loadedPosts[0].post_id.should.be.eql(post.id);
+    loadedPosts[0].post_title.should.be.eql('Foo');
+  });
+
+  it('should save and return the Post using streams within a transaction', async () => {
+    connection.transaction(async entityManager => {
+      const postRepo = entityManager.getRepository(Post);
+      const post = postRepo.create();
+      post.title = 'Foo';
+      post.tenantId = tenantModelOptions.tenantId as number;
+      post.userId = tenantModelOptions.actorId as number;
+      await postRepo.save(post);
+
+      const postStream = await postRepo
+        .createQueryBuilder('post')
+        .where({ id: post.id })
+        .stream();
+
+      const loadedPosts = await new Promise<any>((resolve, reject) => {
+        const result = [];
+        postStream.on('data', data => result.push(data));
+        postStream.on('end', () => resolve(result));
+        postStream.on('error', reject);
+      });
+
+      loadedPosts.should.have.lengthOf(1);
+      loadedPosts[0].post_id.should.be.eql(post.id);
+      loadedPosts[0].post_title.should.be.eql('Foo');
+    });
+  });
+
+  it('should not reset tenantid if a query is ran while streaming', async () => {
+    const postRepo = connection.getRepository(Post);
+    const fooPost = postRepo.create();
+    fooPost.title = 'Foo';
+    fooPost.tenantId = tenantModelOptions.tenantId as number;
+    fooPost.userId = tenantModelOptions.actorId as number;
+
+    const barPost = postRepo.create();
+    barPost.title = 'Bar';
+    barPost.tenantId = tenantModelOptions.tenantId as number;
+    barPost.userId = tenantModelOptions.actorId as number;
+    await postRepo.save([fooPost, barPost]);
+
+    const loadedPosts = await new Promise<Post[]>(async (resolve, reject) => {
+      const postStream = (
+        await postRepo.createQueryBuilder('post').stream()
+      ).pipe(
+        new Transform({
+          objectMode: true,
+          transform: async (data, encoding, callback) => {
+            try {
+              callback(
+                null,
+                await postRepo.findOneOrFail({
+                  where: { id: data.post_id },
+                }),
+              );
+            } catch (err) {
+              callback(err);
+            }
+          },
+        }),
+      );
+
+      const result: Post[] = [];
+      postStream.on('data', (data: Post) => {
+        result.push(data);
+      });
+      postStream.on('end', () => resolve(result));
+      postStream.on('error', reject);
+    });
+
+    loadedPosts.should.have.lengthOf(2);
+    loadedPosts[0].should.be.instanceOf(Post);
+    loadedPosts[0].id.should.be.eql(fooPost.id);
+    loadedPosts[0].title.should.be.eql('Foo');
+
+    loadedPosts[1].should.be.instanceOf(Post);
+    loadedPosts[1].id.should.be.eql(barPost.id);
+    loadedPosts[1].title.should.be.eql('Bar');
   });
 
   describe('#close', () => {
