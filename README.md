@@ -1,5 +1,5 @@
-[![Build And Test](https://github.com/Avallone-io/rls/actions/workflows/build-and-test.yml/badge.svg?branch=master)](https://github.com/Avallone-io/rls/actions/workflows/build-and-test.yml)
-[![.github/workflows/release.yml](https://github.com/Avallone-io/rls/actions/workflows/release.yml/badge.svg?branch=master)](https://github.com/Avallone-io/rls/actions/workflows/release.yml)
+[![Build And Test](https://github.com/stelescuraul/rls/actions/workflows/build-and-test.yml/badge.svg?branch=master)](https://github.com/stelescuraul/rls/actions/workflows/build-and-test.yml)
+[![.github/workflows/release.yml](https://github.com/stelescuraul/rls/actions/workflows/release.yml/badge.svg?branch=master)](https://github.com/stelescuraul/rls/actions/workflows/release.yml)
 
 # Description
 
@@ -9,7 +9,7 @@ This solution does not work by having multiple connections to database (eg: one 
 
 # Install
 
-> $ npm install @avallone-io/rls
+> $ npm install type-rls
 
 # Usage
 
@@ -93,7 +93,7 @@ export class AppModule {}
 
 Now you can use the normal module injection for repositories, services etc.
 
-To inject the RLS connection within a service, you can do by using `@Inject(TENANT_CONNECTION)` where `TENANT_CONNECTION` is imported from `@avallone-io/rls`.
+To inject the RLS connection within a service, you can do by using `@Inject(TENANT_CONNECTION)` where `TENANT_CONNECTION` is imported from `type-rls`.
 
 ```typescript
 export class AppService {
