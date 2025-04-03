@@ -136,7 +136,7 @@ describe('RLS Module', () => {
 
     const fooReqProm = getAuthRequest(app, 'get', '/categories', fooTenant)
       .expect(200)
-      .expect(res => {
+      .expect((res: { body: Category[] }) => {
         const allCategoryIds = res.body.map(cat => cat.id);
         expect(allCategoryIds).to.contain(deletedCategoryId);
       });
@@ -158,7 +158,9 @@ describe('RLS Module', () => {
 
       stopStub = Sinon.stub(AppService.prototype, 'stop').callThrough();
 
-      clock = Sinon.useFakeTimers();
+      clock = Sinon.useFakeTimers({
+        toFake: ['setTimeout'],
+      });
     });
 
     afterEach(() => {
