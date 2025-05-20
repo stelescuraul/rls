@@ -296,7 +296,10 @@ export async function createTestingConnections(
           schemaPaths.add(schema);
         });
 
-      const schema = dataSource.driver.options?.hasOwnProperty('schema')
+      const schema = Object.prototype.hasOwnProperty.call(
+        dataSource.driver.options,
+        'schema',
+      )
         ? (dataSource.driver.options as any).schema
         : undefined;
 

@@ -46,7 +46,6 @@ export class RLSModule {
       | Promise<DynamicModule>
       | ForwardReference<any>
     )[],
-    // eslint-disable-next-line @typescript-eslint/ban-types
     injectServices: (string | symbol | Function | Type<any> | Abstract<any>)[],
     extractTenant: (
       request,

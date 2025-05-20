@@ -1,36 +1,23 @@
-import { FlatCompat } from '@eslint/eslintrc';
+// import { FlatCompat } from '@eslint/eslintrc';
 import eslint from '@eslint/js';
 import prettier from 'eslint-plugin-prettier';
 import globals from 'globals';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+// import path from 'node:path';
+// import { fileURLToPath } from 'node:url';
 import tseslint from 'typescript-eslint';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: eslint.configs.recommended,
-  allConfig: eslint.configs.all,
-});
-
-// export default tseslint.config(
-//   eslint.configs.recommended,
-//   tseslint.configs.recommended,
-// );
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+// const compat = new FlatCompat({
+//   baseDirectory: __dirname,
+//   recommendedConfig: eslint.configs.recommended,
+//   allConfig: eslint.configs.all,
+// });
 
 export default tseslint.config([
   {
-    // extends: compat.extends(
-    //   'plugin:@typescript-eslint/eslint-recommended',
-    //   'plugin:@typescript-eslint/recommended',
-    //   'prettier',
-    // ),
     extends: [eslint.configs.recommended, tseslint.configs.recommended],
-    plugins: {
-      // "@typescript-eslint": typescriptEslintEslintPlugin,
-      prettier,
-    },
+    plugins: { prettier },
 
     languageOptions: {
       globals: {
@@ -40,7 +27,6 @@ export default tseslint.config([
         ),
       },
 
-      // parser: tsParser,
       ecmaVersion: 5,
       sourceType: 'module',
 
@@ -49,6 +35,15 @@ export default tseslint.config([
       },
     },
 
+    // overrides: [
+    //   {
+    //     files: '*.spec.ts',
+    //     rules: {
+    //       '@typescript-eslint/no-unused-expressions': 'off',
+    //     },
+    //   },
+    // ],
+
     rules: {
       'prettier/prettier': ['error'],
       '@typescript-eslint/interface-name-prefix': 'off',
@@ -56,6 +51,7 @@ export default tseslint.config([
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-function-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
+      'no-async-promise-executor': 'off',
       'max-len': 'off',
 
       '@typescript-eslint/naming-convention': [
@@ -92,5 +88,11 @@ export default tseslint.config([
       'no-unexpected-multiline': 'off',
     },
   },
-]);
 
+  {
+    files: ['**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-expressions': 'off',
+    },
+  },
+]);

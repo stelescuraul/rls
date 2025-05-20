@@ -145,7 +145,7 @@ describe('RLS Module', () => {
 
   describe('multiple-requests', () => {
     let connectionStub: Sinon.SinonStub;
-    let clock: sinon.SinonFakeTimers;
+    let clock: Sinon.SinonFakeTimers;
     let stopStub: Sinon.SinonStub;
 
     // Start the server first
