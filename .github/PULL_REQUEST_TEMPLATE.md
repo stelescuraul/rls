@@ -11,7 +11,7 @@
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] Refactor (non-breaking change which does not add functionality)
 
-# Checklist:
+# Checklist
 
 - [ ] I have made corresponding changes to the documentation
 - [ ] I have added tests that prove my fix is effective or that my feature works

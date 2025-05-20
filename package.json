@@ -39,7 +39,6 @@
     "@nestjs/testing": "^10.0.0",
     "@nestjs/typeorm": "^10.0.0",
     "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
     "@types/chai": "^5.2.1",
     "@types/chai-as-promised": "^8.0.2",
     "@types/express": "^5.0.1",
