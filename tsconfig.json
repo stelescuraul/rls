@@ -2,6 +2,7 @@
   "compilerOptions": {
     "module": "commonjs",
     "lib": ["es2019"],
+    "checkJs": true,
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,

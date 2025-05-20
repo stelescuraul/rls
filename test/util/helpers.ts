@@ -53,12 +53,17 @@ export async function setupResolvers(
   for (let i = 0; i < runners.length; i++) {
     const resolver = sinon.fake.resolves(
       new Promise(resolve => {
-        return setTimeout(async () => {
-          resolve(
-            queryPrototypeStub.wrappedMethod.bind(runners[i])(queryStrings[i]),
-          );
-          // Randomly timeout between 0 and 1000ms per runner
-        }, Math.floor(Math.random() * (max - 1000)));
+        return setTimeout(
+          async () => {
+            resolve(
+              queryPrototypeStub.wrappedMethod.bind(runners[i])(
+                queryStrings[i],
+              ),
+            );
+            // Randomly timeout between 0 and 1000ms per runner
+          },
+          Math.floor(Math.random() * (max - 1000)),
+        );
       }),
     );
 

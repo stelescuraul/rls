@@ -3,7 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
 import { RLSConnection } from 'lib/common';
 import { TenancyModelOptions } from 'lib/interfaces';
-import * as Fetch from 'node-fetch';
+import fetch from 'node-fetch';
+import * as Sinon from 'sinon';
 import * as request from 'supertest';
 import { AppModule } from 'test/nestjs/src/app.module';
 import { AppService } from 'test/nestjs/src/app.service';
@@ -23,9 +24,7 @@ import {
   TestingConnectionOptions,
 } from 'test/util/test-utils';
 import { DataSource } from 'typeorm';
-import Sinon = require('sinon');
 
-const fetch = Fetch.default;
 const configs = getTypeOrmConfig();
 
 describe('RLS Module', () => {
