@@ -17,6 +17,9 @@
     "coverage:open": "ts-node ./openCoverageReport.ts",
     "coverage:html": "npm run coverage && npm run coverage:open"
   },
+  "publishConfig": {
+    "provenance": true
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:stelescuraul/rls.git"
