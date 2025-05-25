@@ -1,18 +1,7 @@
-// import { FlatCompat } from '@eslint/eslintrc';
 import eslint from '@eslint/js';
 import prettier from 'eslint-plugin-prettier';
 import globals from 'globals';
-// import path from 'node:path';
-// import { fileURLToPath } from 'node:url';
 import tseslint from 'typescript-eslint';
-
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-// const compat = new FlatCompat({
-//   baseDirectory: __dirname,
-//   recommendedConfig: eslint.configs.recommended,
-//   allConfig: eslint.configs.all,
-// });
 
 export default tseslint.config([
   {
@@ -34,15 +23,6 @@ export default tseslint.config([
         project: 'tsconfig.json',
       },
     },
-
-    // overrides: [
-    //   {
-    //     files: '*.spec.ts',
-    //     rules: {
-    //       '@typescript-eslint/no-unused-expressions': 'off',
-    //     },
-    //   },
-    // ],
 
     rules: {
       'prettier/prettier': ['error'],
