@@ -7,6 +7,10 @@ Row level security utilitary package to apply to NestJS and TypeORM.
 
 This solution does not work by having multiple connections to database (eg: one connection / tenant). Instead, this solution works by applying the database policies for RLS as described in [this aws blog post](https://aws.amazon.com/blogs/database/multi-tenant-data-isolation-with-postgresql-row-level-security/) (under the **_Alternative approach_**).
 
+> [!NOTE]
+> Package has been renamed from `@avallone-io/rls` to simply `type-rls`.
+
+
 # Install
 
 > $ npm install type-rls
