@@ -618,9 +618,8 @@ describe('RLSPostgresQueryRunner', () => {
 
         // This should return first
         // It will still be registered in stub
-        const barTenantCategoryResult = await localQueryRunner.query(
-          barQueryString,
-        );
+        const barTenantCategoryResult =
+          await localQueryRunner.query(barQueryString);
 
         expect(queryPrototypeStub).to.have.been.calledWith(barQueryString);
         expectSameCategoryByTenantId(

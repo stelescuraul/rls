@@ -1,8 +1,6 @@
-version: '3.7'
-
 services:
   postgres:
-    image: postgres:11
+    image: postgres:latest
     container_name: rls-test-postgres
     ports:
       - 5440:5432
@@ -16,7 +14,7 @@ services:
       dockerfile: ./test/Dockerfile
     command: npm run test:mocha
     volumes:
-      - ../:/usr/src/app
+      - /usr/src/app/node_modules
     depends_on:
       - postgres
     environment: 

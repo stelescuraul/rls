@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import sinon = require('sinon');
+import * as Sinon from 'sinon';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
@@ -376,21 +376,19 @@ describe('Repository', function () {
   });
 
   describe('queued queries', () => {
-    let queryPrototypeSpy: sinon.SinonSpy;
-    let connectedQueryRunnersStub: sinon.SinonStub;
+    let queryPrototypeSpy: Sinon.SinonSpy;
+    let connectedQueryRunnersStub: Sinon.SinonStub;
 
     beforeEach(() => {
-      queryPrototypeSpy = sinon.spy(PostgresQueryRunner.prototype, 'query');
+      queryPrototypeSpy = Sinon.spy(PostgresQueryRunner.prototype, 'query');
 
-      connectedQueryRunnersStub = sinon
-        .stub(
-          (tenantUserConnection.driver as PostgresDriver).connectedQueryRunners,
-          'push',
-        )
-        .callThrough();
+      connectedQueryRunnersStub = Sinon.stub(
+        (tenantUserConnection.driver as PostgresDriver).connectedQueryRunners,
+        'push',
+      ).callThrough();
     });
     afterEach(() => {
-      sinon.restore();
+      Sinon.restore();
     });
 
     it('should apply RLS to queued queries', async () => {

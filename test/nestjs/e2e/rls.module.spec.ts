@@ -3,7 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
 import { RLSConnection } from 'lib/common';
 import { TenancyModelOptions } from 'lib/interfaces';
-import * as Fetch from 'node-fetch';
+import fetch from 'node-fetch';
+import * as Sinon from 'sinon';
 import * as request from 'supertest';
 import { AppModule } from 'test/nestjs/src/app.module';
 import { AppService } from 'test/nestjs/src/app.service';
@@ -23,9 +24,7 @@ import {
   TestingConnectionOptions,
 } from 'test/util/test-utils';
 import { DataSource } from 'typeorm';
-import Sinon = require('sinon');
 
-const fetch = Fetch.default;
 const configs = getTypeOrmConfig();
 
 describe('RLS Module', () => {
@@ -136,7 +135,7 @@ describe('RLS Module', () => {
 
     const fooReqProm = getAuthRequest(app, 'get', '/categories', fooTenant)
       .expect(200)
-      .expect(res => {
+      .expect((res: { body: Category[] }) => {
         const allCategoryIds = res.body.map(cat => cat.id);
         expect(allCategoryIds).to.contain(deletedCategoryId);
       });
@@ -146,7 +145,7 @@ describe('RLS Module', () => {
 
   describe('multiple-requests', () => {
     let connectionStub: Sinon.SinonStub;
-    let clock: sinon.SinonFakeTimers;
+    let clock: Sinon.SinonFakeTimers;
     let stopStub: Sinon.SinonStub;
 
     // Start the server first
@@ -158,7 +157,9 @@ describe('RLS Module', () => {
 
       stopStub = Sinon.stub(AppService.prototype, 'stop').callThrough();
 
-      clock = Sinon.useFakeTimers();
+      clock = Sinon.useFakeTimers({
+        toFake: ['setTimeout'],
+      });
     });
 
     afterEach(() => {

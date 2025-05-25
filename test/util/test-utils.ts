@@ -54,7 +54,6 @@ export interface TestingOptions {
   /**
    * Entities needs to be included in the connection for the given test suite.
    */
-  // eslint-disable-next-line @typescript-eslint/ban-types
   entities?: (string | Function | EntitySchema<any>)[];
 
   /**
@@ -65,7 +64,6 @@ export interface TestingOptions {
   /**
    * Subscribers needs to be included in the connection for the given test suite.
    */
-  // eslint-disable-next-line @typescript-eslint/ban-types
   subscribers?: string[] | Function[];
 
   /**
@@ -298,7 +296,10 @@ export async function createTestingConnections(
           schemaPaths.add(schema);
         });
 
-      const schema = dataSource.driver.options?.hasOwnProperty('schema')
+      const schema = Object.prototype.hasOwnProperty.call(
+        dataSource.driver.options,
+        'schema',
+      )
         ? (dataSource.driver.options as any).schema
         : undefined;
 
@@ -309,7 +310,7 @@ export async function createTestingConnections(
       for (const schemaPath of schemaPaths) {
         try {
           await queryRunner.createSchema(schemaPath, true);
-        } catch (e) {
+        } catch {
           // Do nothing
         }
       }
