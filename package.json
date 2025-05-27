@@ -23,7 +23,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:stelescuraul/rls.git"
+    "url": "git+ssh://git@github.com/stelescuraul/rls.git"
   },
   "author": "Raul Stelescu",
   "license": "ISC",
