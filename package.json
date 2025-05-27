@@ -18,7 +18,8 @@
     "coverage:html": "npm run coverage && npm run coverage:open"
   },
   "publishConfig": {
-    "provenance": true
+    "provenance": true,
+    "access": "public"
   },
   "repository": {
     "type": "git",
