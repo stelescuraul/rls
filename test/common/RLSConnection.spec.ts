@@ -1,16 +1,30 @@
+import * as seedRandom from 'seedrandom';
 import { expect } from 'chai';
 import { TenancyModelOptions } from 'lib/interfaces';
 import { Category } from 'test/util/entity/Category';
-import { DataSource } from 'typeorm';
+import {
+  DataSource,
+  DataSourceOptions,
+  EntityManager,
+  QueryRunner,
+} from 'typeorm';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { RLSConnection, RLSPostgresQueryRunner } from '../../lib/common';
 import { Post } from '../util/entity/Post';
 import { Transform } from 'stream';
 import {
   closeTestingConnections,
+  getTypeOrmConfig,
   reloadTestingDatabases,
   setupSingleTestingConnection,
 } from '../util/test-utils';
+import {
+  createTeantUser,
+  resetMultiTenant,
+  setupMultiTenant,
+} from 'test/util/helpers';
+
+const configs = getTypeOrmConfig();
 
 describe('RLSConnection', () => {
   let connection: RLSConnection;
@@ -100,9 +114,9 @@ describe('RLSConnection', () => {
 
     const loadedPost = await postRepo.findOneBy({ id: post.id });
 
-    loadedPost.should.be.instanceOf(Post);
-    loadedPost.id.should.be.eql(post.id);
-    loadedPost.title.should.be.eql('Foo');
+    expect(loadedPost).to.be.instanceOf(Post);
+    expect(loadedPost.id).to.eql(post.id);
+    expect(loadedPost.title).to.eql('Foo');
   });
 
   it('should save and return the Post using streams', async () => {
@@ -125,13 +139,13 @@ describe('RLSConnection', () => {
       postStream.on('error', reject);
     });
 
-    loadedPosts.should.have.lengthOf(1);
-    loadedPosts[0].post_id.should.be.eql(post.id);
-    loadedPosts[0].post_title.should.be.eql('Foo');
+    expect(loadedPosts).to.have.lengthOf(1);
+    expect(loadedPosts[0].post_id).to.eql(post.id);
+    expect(loadedPosts[0].post_title).to.eql('Foo');
   });
 
   it('should save and return the Post using streams within a transaction', async () => {
-    connection.transaction(async entityManager => {
+    await connection.transaction(async entityManager => {
       const postRepo = entityManager.getRepository(Post);
       const post = postRepo.create();
       post.title = 'Foo';
@@ -151,9 +165,9 @@ describe('RLSConnection', () => {
         postStream.on('error', reject);
       });
 
-      loadedPosts.should.have.lengthOf(1);
-      loadedPosts[0].post_id.should.be.eql(post.id);
-      loadedPosts[0].post_title.should.be.eql('Foo');
+      expect(loadedPosts).to.have.lengthOf(1);
+      expect(loadedPosts[0].post_id).to.eql(post.id);
+      expect(loadedPosts[0].post_title).to.eql('Foo');
     });
   });
 
@@ -199,14 +213,14 @@ describe('RLSConnection', () => {
       postStream.on('error', reject);
     });
 
-    loadedPosts.should.have.lengthOf(2);
-    loadedPosts[0].should.be.instanceOf(Post);
-    loadedPosts[0].id.should.be.eql(fooPost.id);
-    loadedPosts[0].title.should.be.eql('Foo');
+    expect(loadedPosts).to.have.lengthOf(2);
+    expect(loadedPosts[0]).to.be.instanceOf(Post);
+    expect(loadedPosts[0].id).to.eql(fooPost.id);
+    expect(loadedPosts[0].title).to.eql('Foo');
 
-    loadedPosts[1].should.be.instanceOf(Post);
-    loadedPosts[1].id.should.be.eql(barPost.id);
-    loadedPosts[1].title.should.be.eql('Bar');
+    expect(loadedPosts[1]).to.be.instanceOf(Post);
+    expect(loadedPosts[1].id).to.eql(barPost.id);
+    expect(loadedPosts[1].title).to.eql('Bar');
   });
 
   describe('#close', () => {
@@ -280,6 +294,201 @@ describe('RLSConnection', () => {
       return expect(
         postRepo.findOne({ where: { id: postId } }),
       ).to.eventually.have.property('id', postId);
+    });
+  });
+
+  describe('with multiple queries on a single connection (issues/224)', () => {
+    let singlePoolConnection: DataSource;
+    const tenantDbUser = 'tenant_aware_user';
+    const rng = seedRandom('test-single-connection-issue-224');
+
+    before(async () => {
+      await createTeantUser(originalConnection, tenantDbUser);
+
+      const connectionOptions = setupSingleTestingConnection(
+        'postgres',
+        {
+          entities: [Post, Category],
+        },
+        {
+          ...configs[0],
+          name: 'singlePoolConnection',
+          username: tenantDbUser,
+          extra: {
+            poolSize: 1, // Force single connection to test RLS
+          },
+        } as DataSourceOptions,
+      );
+
+      singlePoolConnection = await new DataSource(
+        connectionOptions,
+      ).initialize();
+    });
+
+    beforeEach(async () => {
+      await reloadTestingDatabases([originalConnection]);
+      await setupMultiTenant(originalConnection, tenantDbUser);
+    });
+
+    after(async () => {
+      await resetMultiTenant(originalConnection, tenantDbUser);
+      await closeTestingConnections([singlePoolConnection]);
+    });
+
+    async function runInTransaction<T>(
+      connection: DataSource,
+      runInTransaction: (
+        entityManager: EntityManager,
+        qr: QueryRunner,
+      ) => Promise<T>,
+    ) {
+      const qr = connection.createQueryRunner();
+      const manager = qr.manager;
+      try {
+        await qr.startTransaction();
+        const result = await runInTransaction(manager, qr);
+        if (qr.isTransactionActive) {
+          await qr.commitTransaction();
+        }
+        return result;
+      } catch (error) {
+        if (qr.isTransactionActive) {
+          await qr.rollbackTransaction();
+        }
+        throw error;
+      } finally {
+        await qr.release();
+      }
+    }
+
+    async function fetchPostWithRandomDelay(em: EntityManager) {
+      // Add a seeded delay between 100ms and 2000ms
+      const delay = Math.floor(rng() * 1900) + 100;
+      await new Promise(resolve => setTimeout(resolve, delay));
+
+      return em.find(Post);
+    }
+
+    it('should handle multiple queries in a transaction for the same tenant', async () => {
+      const tenant: TenancyModelOptions = {
+        actorId: 1,
+        tenantId: 100,
+      };
+
+      const fooConnection = new RLSConnection(singlePoolConnection, tenant);
+      const postRepo = fooConnection.getRepository(Post);
+
+      await postRepo.save({ title: 'Test Post', tenantId: 100, userId: 1 });
+
+      await runInTransaction(fooConnection, async em => {
+        const promises = [];
+        const iterations = 100;
+        for (let i = 0; i < iterations; i++) {
+          promises.push(fetchPostWithRandomDelay(em));
+        }
+
+        const results = (await Promise.all(promises)).flat();
+        expect(results).to.have.lengthOf(iterations);
+
+        for (const result of results) {
+          expect(result).to.have.property('tenantId', 100);
+        }
+      });
+    });
+
+    it('should handle multiple queries in a transaction for different tenants', async () => {
+      const fooTenant: TenancyModelOptions = {
+        actorId: 1,
+        tenantId: 100,
+      };
+      const barTenant: TenancyModelOptions = {
+        actorId: 2,
+        tenantId: 200,
+      };
+
+      const fooConnection = new RLSConnection(singlePoolConnection, fooTenant);
+      const barConnection = new RLSConnection(singlePoolConnection, barTenant);
+
+      const fooPostRepo = fooConnection.getRepository(Post);
+      const barPostRepo = barConnection.getRepository(Post);
+
+      await fooPostRepo.save({ title: 'Foo Post', tenantId: 100, userId: 1 });
+      await barPostRepo.save({ title: 'Bar Post', tenantId: 200, userId: 2 });
+
+      const fooTransaction = runInTransaction(fooConnection, async em => {
+        const promises = [];
+        const iterations = 1000;
+        for (let i = 0; i < iterations; i++) {
+          promises.push(fetchPostWithRandomDelay(em));
+        }
+        return Promise.all(promises);
+      });
+
+      const barTransaction = runInTransaction(barConnection, async em => {
+        const promises = [];
+        const iterations = 1000;
+        for (let i = 0; i < iterations; i++) {
+          promises.push(fetchPostWithRandomDelay(em));
+        }
+        return Promise.all(promises);
+      });
+
+      const results = await Promise.all([fooTransaction, barTransaction]);
+
+      const fooResults = results[0].flat();
+      const barResults = results[1].flat();
+
+      expect(fooResults).to.have.lengthOf(1000);
+      expect(barResults).to.have.lengthOf(1000);
+      for (const result of fooResults) {
+        expect(result).to.have.property('tenantId', 100);
+      }
+      for (const result of barResults) {
+        expect(result).to.have.property('tenantId', 200);
+      }
+    });
+
+    it('should handle multiple queries for different tenants without transaction', async () => {
+      const fooTenant: TenancyModelOptions = {
+        actorId: 1,
+        tenantId: 100,
+      };
+      const barTenant: TenancyModelOptions = {
+        actorId: 2,
+        tenantId: 200,
+      };
+
+      const fooConnection = new RLSConnection(singlePoolConnection, fooTenant);
+      const barConnection = new RLSConnection(singlePoolConnection, barTenant);
+
+      const fooPostRepo = fooConnection.getRepository(Post);
+      const barPostRepo = barConnection.getRepository(Post);
+
+      await fooPostRepo.save({ title: 'Foo Post', tenantId: 100, userId: 1 });
+      await barPostRepo.save({ title: 'Bar Post', tenantId: 200, userId: 2 });
+
+      const fooPromises = [];
+      const barPromises = [];
+      const iterations = 1000;
+      for (let i = 0; i < iterations; i++) {
+        fooPromises.push(fooPostRepo.find());
+        barPromises.push(barPostRepo.find());
+      }
+
+      const results = (
+        await Promise.all([...fooPromises, ...barPromises])
+      ).flat();
+      expect(results).to.have.lengthOf(iterations * 2);
+
+      const fooResults = results.slice(0, iterations);
+      const barResults = results.slice(iterations);
+
+      for (const result of fooResults) {
+        expect(result).to.have.property('tenantId', 100);
+      }
+      for (const result of barResults) {
+        expect(result).to.have.property('tenantId', 200);
+      }
     });
   });
 });

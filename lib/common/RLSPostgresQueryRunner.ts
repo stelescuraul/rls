@@ -43,7 +43,7 @@ export class RLSPostgresQueryRunner extends PostgresQueryRunner {
     params?: any[],
     useStructuredResult?: boolean,
   ): Promise<any> {
-    if (!this.isTransactionCommand) {
+    if (!this.isTransactionActive && !this.isTransactionCommand) {
       await this.setOptionsInDB();
     }
 
@@ -55,7 +55,7 @@ export class RLSPostgresQueryRunner extends PostgresQueryRunner {
       error = err;
     }
 
-    if (!this.isTransactionCommand && !(this.isTransactionActive && error)) {
+    if (!this.isTransactionActive && !this.isTransactionCommand) {
       await this.resetOptionsInDB();
     }
 
@@ -102,12 +102,14 @@ export class RLSPostgresQueryRunner extends PostgresQueryRunner {
   async startTransaction(isolationLevel?: IsolationLevel): Promise<void> {
     this.isTransactionCommand = true;
     await super.startTransaction(isolationLevel);
+    await this.setOptionsInDB();
     this.isTransactionCommand = false;
   }
 
   async commitTransaction(): Promise<void> {
     this.isTransactionCommand = true;
     await super.commitTransaction();
+    await this.resetOptionsInDB();
     this.isTransactionCommand = false;
   }
 
