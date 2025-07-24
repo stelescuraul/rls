@@ -100,9 +100,9 @@ describe('RLSConnection', () => {
 
     const loadedPost = await postRepo.findOneBy({ id: post.id });
 
-    loadedPost.should.be.instanceOf(Post);
-    loadedPost.id.should.be.eql(post.id);
-    loadedPost.title.should.be.eql('Foo');
+    expect(loadedPost).be.instanceOf(Post);
+    expect(loadedPost.id).be.eql(post.id);
+    expect(loadedPost.title).be.eql('Foo');
   });
 
   it('should save and return the Post using streams', async () => {
@@ -199,14 +199,14 @@ describe('RLSConnection', () => {
       postStream.on('error', reject);
     });
 
-    loadedPosts.should.have.lengthOf(2);
-    loadedPosts[0].should.be.instanceOf(Post);
-    loadedPosts[0].id.should.be.eql(fooPost.id);
-    loadedPosts[0].title.should.be.eql('Foo');
+    expect(loadedPosts).have.lengthOf(2);
+    expect(loadedPosts[0]).be.instanceOf(Post);
+    expect(loadedPosts[0].id).be.eql(fooPost.id);
+    expect(loadedPosts[0].title).be.eql('Foo');
 
-    loadedPosts[1].should.be.instanceOf(Post);
-    loadedPosts[1].id.should.be.eql(barPost.id);
-    loadedPosts[1].title.should.be.eql('Bar');
+    expect(loadedPosts[1]).be.instanceOf(Post);
+    expect(loadedPosts[1].id).be.eql(barPost.id);
+    expect(loadedPosts[1].title).be.eql('Bar');
   });
 
   describe('#close', () => {
