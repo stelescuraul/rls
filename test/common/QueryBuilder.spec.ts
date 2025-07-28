@@ -15,14 +15,14 @@ import {
   setupMultiTenant,
 } from '../util/helpers';
 import {
-  closeTestingConnections,
+  closeConnections,
   getTypeOrmConfig,
-  reloadTestingDatabases,
-  setupSingleTestingConnection,
+  resetDatabases,
+  getConnectionOptions,
 } from '../util/test-utils';
 import { Category } from '../util/entity/Category';
 import { Post } from '../util/entity/Post';
-const configs = getTypeOrmConfig();
+const config = getTypeOrmConfig();
 
 describe('QueryBuilder', function () {
   const tenantDbUser = 'tenant_aware_user';
@@ -44,21 +44,18 @@ describe('QueryBuilder', function () {
   };
 
   before(async () => {
-    const migrationConnectionOptions = await setupSingleTestingConnection(
-      'postgres',
-      {
-        entities: [Post, Category],
-        dropSchema: true,
-        schemaCreate: true,
-      },
-    );
-    const tenantAwareConnectionOptions = await setupSingleTestingConnection(
+    const migrationConnectionOptions = getConnectionOptions('postgres', {
+      entities: [Post, Category],
+      dropSchema: true,
+      schemaCreate: true,
+    });
+    const tenantAwareConnectionOptions = getConnectionOptions(
       'postgres',
       {
         entities: [Post, Category],
       },
       {
-        ...configs[0],
+        ...config,
         name: 'tenantAware',
         username: tenantDbUser,
       } as DataSourceOptions,
@@ -76,7 +73,7 @@ describe('QueryBuilder', function () {
     barConnection = new RLSConnection(tenantUserConnection, barTenant);
   });
   beforeEach(async () => {
-    await reloadTestingDatabases([migrationConnection]);
+    await resetDatabases([migrationConnection]);
     await setupMultiTenant(migrationConnection, tenantDbUser);
 
     const testData = await createData(
@@ -89,7 +86,7 @@ describe('QueryBuilder', function () {
   });
   after(async () => {
     await resetMultiTenant(migrationConnection, tenantDbUser);
-    await closeTestingConnections([migrationConnection, tenantUserConnection]);
+    await closeConnections([migrationConnection, tenantUserConnection]);
   });
 
   it('should return different queryBuilders', () => {

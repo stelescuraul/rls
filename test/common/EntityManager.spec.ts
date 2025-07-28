@@ -18,12 +18,12 @@ import {
   closeTestingConnections,
   getTypeOrmConfig,
   reloadTestingDatabases,
-  setupSingleTestingConnection,
+  getConnectionOptions,
 } from '../util/test-utils';
 import { Category } from '../util/entity/Category';
 import { Post } from '../util/entity/Post';
 
-const configs = getTypeOrmConfig();
+const config = getTypeOrmConfig();
 
 describe('EntityManager', function () {
   const tenantDbUser = 'tenant_aware_user';
@@ -45,21 +45,18 @@ describe('EntityManager', function () {
   };
 
   before(async () => {
-    const migrationConnectionOptions = await setupSingleTestingConnection(
-      'postgres',
-      {
-        entities: [Post, Category],
-        dropSchema: true,
-        schemaCreate: true,
-      },
-    );
-    const tenantAwareConnectionOptions = await setupSingleTestingConnection(
+    const migrationConnectionOptions = await getConnectionOptions('postgres', {
+      entities: [Post, Category],
+      dropSchema: true,
+      schemaCreate: true,
+    });
+    const tenantAwareConnectionOptions = await getConnectionOptions(
       'postgres',
       {
         entities: [Post, Category],
       },
       {
-        ...configs[0],
+        ...config,
         name: 'tenantAware',
         username: tenantDbUser,
       } as DataSourceOptions,

@@ -29,12 +29,12 @@ import {
   setupResolvers,
 } from '../util/helpers';
 import {
-  closeTestingConnections,
+  closeConnections,
   getTypeOrmConfig,
-  reloadTestingDatabases,
-  setupSingleTestingConnection,
+  resetDatabases,
+  getConnectionOptions,
 } from '../util/test-utils';
-const configs = getTypeOrmConfig();
+const config = getTypeOrmConfig();
 
 describe('RLSPostgresQueryRunner', () => {
   let connection: RLSConnection;
@@ -55,19 +55,19 @@ describe('RLSPostgresQueryRunner', () => {
   };
 
   before(async () => {
-    const connectionOptions = setupSingleTestingConnection('postgres', {
+    const connectionOptions = getConnectionOptions('postgres', {
       entities: [Post, Category],
       dropSchema: true,
       schemaCreate: true,
     });
 
-    const migrationConnectionOptions = setupSingleTestingConnection(
+    const migrationConnectionOptions = getConnectionOptions(
       'postgres',
       {
         entities: [Post, Category],
       },
       {
-        ...configs[0],
+        ...config,
         name: 'migrationConnection',
       } as ConnectionOptions,
     );
@@ -79,13 +79,13 @@ describe('RLSPostgresQueryRunner', () => {
     driver = connection.driver;
   });
   beforeEach(async () => {
-    await reloadTestingDatabases([migrationConnection]);
+    await resetDatabases([migrationConnection]);
     queryRunner = new RLSPostgresQueryRunner(driver, 'master', fooTenant);
   });
   afterEach(async () => await queryRunner.release());
   after(
     async () =>
-      await closeTestingConnections([originalConnection, migrationConnection]),
+      await closeConnections([originalConnection, migrationConnection]),
   );
 
   it('should be instance of RLSPostgresQueryRunner', () => {
@@ -704,14 +704,14 @@ describe('RLSPostgresQueryRunner', () => {
     let localDriver: RLSPostgresDriver;
 
     before(async () => {
-      const tenantConnectionOptions = setupSingleTestingConnection(
+      const tenantConnectionOptions = getConnectionOptions(
         'postgres',
         {
           entities: [Post, Category],
           logging: false,
         },
         {
-          ...configs[0],
+          ...config,
           name: 'tenantConnection',
           extra: {
             poolSize: 1,
@@ -743,7 +743,7 @@ describe('RLSPostgresQueryRunner', () => {
       await singleQueryRunner.release();
     });
 
-    after(async () => await closeTestingConnections([singleConnection]));
+    after(async () => await closeConnections([singleConnection]));
 
     it('should not persist the settings in connection from the pool', async () => {
       // Force throwing an error in the query

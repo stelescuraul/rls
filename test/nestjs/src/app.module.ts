@@ -10,12 +10,12 @@ import { Post } from 'test/util/entity/Post';
 import { Category } from 'test/util/entity/Category';
 import { PostRepository } from './post.repository';
 
-const configs = getTypeOrmConfig();
+const config = getTypeOrmConfig();
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      ...configs[0],
+      ...config,
       username: 'tenant_aware_user',
       entities: [Post, Category],
       logging: false,

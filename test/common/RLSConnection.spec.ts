@@ -13,10 +13,10 @@ import { RLSConnection, RLSPostgresQueryRunner } from '../../lib/common';
 import { Post } from '../util/entity/Post';
 import { Transform } from 'stream';
 import {
-  closeTestingConnections,
+  closeConnections,
   getTypeOrmConfig,
-  reloadTestingDatabases,
-  setupSingleTestingConnection,
+  resetDatabases,
+  getConnectionOptions,
 } from '../util/test-utils';
 import {
   createTeantUser,
@@ -24,7 +24,7 @@ import {
   setupMultiTenant,
 } from 'test/util/helpers';
 
-const configs = getTypeOrmConfig();
+const config = getTypeOrmConfig();
 
 describe('RLSConnection', () => {
   let connection: RLSConnection;
@@ -36,7 +36,7 @@ describe('RLSConnection', () => {
   };
 
   before(async () => {
-    const connectionOptions = setupSingleTestingConnection('postgres', {
+    const connectionOptions = getConnectionOptions('postgres', {
       entities: [Post, Category],
       dropSchema: true,
       schemaCreate: true,
@@ -45,8 +45,8 @@ describe('RLSConnection', () => {
     originalConnection = await new DataSource(connectionOptions).initialize();
     connection = new RLSConnection(originalConnection, tenantModelOptions);
   });
-  beforeEach(() => reloadTestingDatabases([connection]));
-  after(() => closeTestingConnections([originalConnection]));
+  beforeEach(() => resetDatabases([connection]));
+  after(() => closeConnections([originalConnection]));
 
   it('should be instance of RLSConnection', () => {
     expect(connection).to.be.instanceOf(RLSConnection);
@@ -305,13 +305,13 @@ describe('RLSConnection', () => {
     before(async () => {
       await createTeantUser(originalConnection, tenantDbUser);
 
-      const connectionOptions = setupSingleTestingConnection(
+      const connectionOptions = getConnectionOptions(
         'postgres',
         {
           entities: [Post, Category],
         },
         {
-          ...configs[0],
+          ...config,
           name: 'singlePoolConnection',
           username: tenantDbUser,
           extra: {
@@ -326,13 +326,13 @@ describe('RLSConnection', () => {
     });
 
     beforeEach(async () => {
-      await reloadTestingDatabases([originalConnection]);
+      await resetDatabases([originalConnection]);
       await setupMultiTenant(originalConnection, tenantDbUser);
     });
 
     after(async () => {
       await resetMultiTenant(originalConnection, tenantDbUser);
-      await closeTestingConnections([singlePoolConnection]);
+      await closeConnections([singlePoolConnection]);
     });
 
     async function runInTransaction<T>(

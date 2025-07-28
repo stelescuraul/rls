@@ -18,14 +18,13 @@ import {
   setupMultiTenant,
 } from 'test/util/helpers';
 import {
-  closeTestingConnections,
+  closeConnections,
   getTypeOrmConfig,
-  setupSingleTestingConnection,
-  TestingConnectionOptions,
+  getConnectionOptions,
 } from 'test/util/test-utils';
-import { DataSource } from 'typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
 
-const configs = getTypeOrmConfig();
+const config = getTypeOrmConfig();
 
 describe('RLS Module', () => {
   let app: INestApplication;
@@ -71,7 +70,7 @@ describe('RLS Module', () => {
     await app.close();
 
     await resetMultiTenant(migrationConnection, tenantDbUser);
-    await closeTestingConnections([migrationConnection]);
+    await closeConnections([migrationConnection]);
   });
 
   it(`GET /status`, () => {
@@ -270,7 +269,7 @@ async function setupDatabase(
   migrationConnection: DataSource,
   tenantDbUser: string,
 ): Promise<DataSource> {
-  const migrationConnectionOptions = setupSingleTestingConnection(
+  const migrationConnectionOptions = getConnectionOptions(
     'postgres',
     {
       entities: [Post, Category],
@@ -278,10 +277,10 @@ async function setupDatabase(
       dropSchema: true,
     },
     {
-      ...configs[0],
+      ...config,
       name: 'migrationConnection',
       synchronize: true,
-    } as TestingConnectionOptions,
+    } as DataSourceOptions,
   );
 
   migrationConnection = new DataSource(migrationConnectionOptions);

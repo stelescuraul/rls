@@ -16,16 +16,16 @@ import {
   setupMultiTenant,
 } from '../util/helpers';
 import {
-  closeTestingConnections,
+  closeConnections,
   getTypeOrmConfig,
-  reloadTestingDatabases,
-  setupSingleTestingConnection,
+  resetDatabases,
+  getConnectionOptions,
 } from '../util/test-utils';
 import { Category } from '../util/entity/Category';
 import { Post } from '../util/entity/Post';
 import { User } from 'test/util/entity/User';
 
-const configs = getTypeOrmConfig();
+const config = getTypeOrmConfig();
 
 describe('Repository', function () {
   const tenantDbUser = 'tenant_aware_user';
@@ -47,21 +47,18 @@ describe('Repository', function () {
   };
 
   before(async () => {
-    const migrationConnectionOptions = setupSingleTestingConnection(
-      'postgres',
-      {
-        entities: [Post, Category, User],
-        dropSchema: true,
-        schemaCreate: true,
-      },
-    );
-    const tenantAwareConnectionOptions = setupSingleTestingConnection(
+    const migrationConnectionOptions = getConnectionOptions('postgres', {
+      entities: [Post, Category, User],
+      dropSchema: true,
+      schemaCreate: true,
+    });
+    const tenantAwareConnectionOptions = getConnectionOptions(
       'postgres',
       {
         entities: [Post, Category, User],
       },
       {
-        ...configs[0],
+        ...config,
         name: 'tenantAware',
         username: tenantDbUser,
       } as DataSourceOptions,
@@ -79,7 +76,7 @@ describe('Repository', function () {
     barConnection = new RLSConnection(tenantUserConnection, barTenant);
   });
   beforeEach(async () => {
-    await reloadTestingDatabases([migrationConnection]);
+    await resetDatabases([migrationConnection]);
     await setupMultiTenant(migrationConnection, tenantDbUser);
 
     const testData = await createData(
@@ -92,7 +89,7 @@ describe('Repository', function () {
   });
   after(async () => {
     await resetMultiTenant(migrationConnection, tenantDbUser);
-    await closeTestingConnections([migrationConnection, tenantUserConnection]);
+    await closeConnections([migrationConnection, tenantUserConnection]);
   });
 
   it('should return different repositories', () => {

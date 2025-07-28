@@ -1,7 +1,7 @@
 import {
-  closeTestingConnections,
-  reloadTestingDatabases,
-  setupSingleTestingConnection,
+  closeConnections,
+  resetDatabases,
+  getConnectionOptions,
 } from '../util/test-utils';
 import { Connection, createConnection, Driver } from 'typeorm';
 import {
@@ -25,7 +25,7 @@ describe('RLSPostgresDriver', () => {
   };
 
   before(async () => {
-    const connectionOptions = await setupSingleTestingConnection('postgres', {
+    const connectionOptions = await getConnectionOptions('postgres', {
       entities: [__dirname + '/entity/*{.js,.ts}'],
       dropSchema: true,
       schemaCreate: true,
@@ -36,8 +36,8 @@ describe('RLSPostgresDriver', () => {
     connection = new RLSConnection(originalConnection, tenantModelOptions);
     driver = connection.driver;
   });
-  beforeEach(() => reloadTestingDatabases([connection]));
-  after(async () => await closeTestingConnections([originalConnection]));
+  beforeEach(() => resetDatabases([connection]));
+  after(async () => await closeConnections([originalConnection]));
 
   it('should be instance of RLSPostgresDriver', () => {
     expect(driver).to.be.instanceOf(RLSPostgresDriver);
