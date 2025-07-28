@@ -55,13 +55,13 @@ describe('RLSPostgresQueryRunner', () => {
   };
 
   before(async () => {
-    const connectionOptions = await setupSingleTestingConnection('postgres', {
+    const connectionOptions = setupSingleTestingConnection('postgres', {
       entities: [Post, Category],
       dropSchema: true,
       schemaCreate: true,
     });
 
-    const migrationConnectionOptions = await setupSingleTestingConnection(
+    const migrationConnectionOptions = setupSingleTestingConnection(
       'postgres',
       {
         entities: [Post, Category],
@@ -570,7 +570,9 @@ describe('RLSPostgresQueryRunner', () => {
           .stub(PostgresQueryRunner.prototype, 'query')
           .callThrough();
 
-        clock = sinon.useFakeTimers();
+        clock = sinon.useFakeTimers({
+          toFake: ['setTimeout'],
+        });
       });
 
       afterEach(async () => {
@@ -702,7 +704,7 @@ describe('RLSPostgresQueryRunner', () => {
     let localDriver: RLSPostgresDriver;
 
     before(async () => {
-      const tenantConnectionOptions = await setupSingleTestingConnection(
+      const tenantConnectionOptions = setupSingleTestingConnection(
         'postgres',
         {
           entities: [Post, Category],
@@ -712,7 +714,7 @@ describe('RLSPostgresQueryRunner', () => {
           ...configs[0],
           name: 'tenantConnection',
           extra: {
-            size: 1,
+            poolSize: 1,
           },
           logging: false,
         } as ConnectionOptions,
