@@ -1,4 +1,4 @@
-import { DataSource, QueryRunner } from 'typeorm';
+import { DataSource, EntityManager, QueryRunner } from 'typeorm';
 import {
   RLSConnection,
   RLSPostgresDriver,
@@ -10,6 +10,32 @@ import * as sinon from 'sinon';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import { Post } from './entity/Post';
 import { Category } from './entity/Category';
+
+export async function runInTransaction<T>(
+  connection: DataSource,
+  runInTransaction: (
+    entityManager: EntityManager,
+    qr: QueryRunner,
+  ) => Promise<T>,
+) {
+  const qr = connection.createQueryRunner();
+  const manager = qr.manager;
+  try {
+    await qr.startTransaction();
+    const result = await runInTransaction(manager, qr);
+    if (qr.isTransactionActive) {
+      await qr.commitTransaction();
+    }
+    return result;
+  } catch (error) {
+    if (qr.isTransactionActive) {
+      await qr.rollbackTransaction();
+    }
+    throw error;
+  } finally {
+    await qr.release();
+  }
+}
 
 export async function createRunners(
   tenantOrder: TenancyModelOptions[],
@@ -321,6 +347,13 @@ export async function setQueryRunnerRole(
 ) {
   await queryRunner.query(`set role ${tenantDbUser}`);
 }
+
+export async function resetQueryRunnerRole(
+  queryRunner: RLSPostgresQueryRunner | RLSConnection | DataSource,
+) {
+  await queryRunner.query(`reset role`);
+}
+
 export async function resetMultiTenant(
   queryRunner: RLSPostgresQueryRunner | RLSConnection | DataSource,
   tenantDbUser: string,

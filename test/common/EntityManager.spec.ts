@@ -1,38 +1,20 @@
 import { expect } from 'chai';
 import * as Sinon from 'sinon';
-import { DataSource, DataSourceOptions } from 'typeorm';
+import { CustomSuite } from 'test/util/harness';
+import { TestBootstrapHarness } from 'test/util/harness/testBootstrap';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
-import { RLSConnection } from '../../lib/common';
 import { TenancyModelOptions } from '../interfaces';
+import { Category } from '../util/entity/Category';
+import { Post } from '../util/entity/Post';
 import {
-  createData,
-  createTeantUser,
   expectPostDataRelation,
   expectTenantData,
   expectTenantDataEventually,
-  resetMultiTenant,
-  setupMultiTenant,
 } from '../util/helpers';
-import {
-  closeTestingConnections,
-  getTypeOrmConfig,
-  reloadTestingDatabases,
-  getConnectionOptions,
-} from '../util/test-utils';
-import { Category } from '../util/entity/Category';
-import { Post } from '../util/entity/Post';
 
-const config = getTypeOrmConfig();
-
-describe('EntityManager', function () {
-  const tenantDbUser = 'tenant_aware_user';
-  let fooConnection: RLSConnection;
-  let barConnection: RLSConnection;
-  let migrationConnection: DataSource;
-  let tenantUserConnection: DataSource;
-  let categories: Category[];
-  let posts: Post[];
+describe('EntityManager', function (this: CustomSuite) {
+  const testBootstrapHarness = new TestBootstrapHarness();
 
   const fooTenant: TenancyModelOptions = {
     actorId: 10,
@@ -44,56 +26,12 @@ describe('EntityManager', function () {
     tenantId: 2,
   };
 
-  before(async () => {
-    const migrationConnectionOptions = await getConnectionOptions('postgres', {
-      entities: [Post, Category],
-      dropSchema: true,
-      schemaCreate: true,
-    });
-    const tenantAwareConnectionOptions = await getConnectionOptions(
-      'postgres',
-      {
-        entities: [Post, Category],
-      },
-      {
-        ...config,
-        name: 'tenantAware',
-        username: tenantDbUser,
-      } as DataSourceOptions,
-    );
-
-    migrationConnection = await new DataSource(
-      migrationConnectionOptions,
-    ).initialize();
-    await createTeantUser(migrationConnection, tenantDbUser);
-
-    tenantUserConnection = await new DataSource(
-      tenantAwareConnectionOptions,
-    ).initialize();
-    fooConnection = new RLSConnection(tenantUserConnection, fooTenant);
-    barConnection = new RLSConnection(tenantUserConnection, barTenant);
-  });
-  beforeEach(async () => {
-    await reloadTestingDatabases([migrationConnection]);
-    await setupMultiTenant(migrationConnection, tenantDbUser);
-
-    const testData = await createData(
-      fooTenant,
-      barTenant,
-      migrationConnection,
-    );
-    categories = testData.categories;
-    posts = testData.posts;
-  });
-  after(async () => {
-    await resetMultiTenant(migrationConnection, tenantDbUser);
-    await closeTestingConnections([migrationConnection, tenantUserConnection]);
-  });
+  testBootstrapHarness.setupHooks(fooTenant, barTenant);
 
   it('should return different entityManagers', () => {
-    const fooEntityManager = fooConnection.createEntityManager();
-    const barEntityManager = barConnection.createEntityManager();
-    const entityManager = migrationConnection.createEntityManager();
+    const fooEntityManager = this.fooConnection.createEntityManager();
+    const barEntityManager = this.barConnection.createEntityManager();
+    const entityManager = this.migrationDataSource.createEntityManager();
 
     expect(fooEntityManager).to.not.deep.equal(entityManager);
     expect(barEntityManager).to.not.deep.equal(entityManager);
@@ -101,19 +39,19 @@ describe('EntityManager', function () {
   });
 
   it('should apply RLS to entityManager', async () => {
-    const fooEntityManager = fooConnection.createEntityManager();
-    const barEntityManager = barConnection.createEntityManager();
-    const entityManager = migrationConnection.createEntityManager();
+    const fooEntityManager = this.fooConnection.createEntityManager();
+    const barEntityManager = this.barConnection.createEntityManager();
+    const entityManager = this.migrationDataSource.createEntityManager();
 
     await expectTenantDataEventually(
       expect(fooEntityManager.find(Post)),
-      posts,
+      this.posts,
       1,
       fooTenant,
     );
     await expectTenantDataEventually(
       expect(barEntityManager.find(Post)),
-      posts,
+      this.posts,
       1,
       barTenant,
     );
@@ -122,19 +60,19 @@ describe('EntityManager', function () {
   });
 
   it('should apply RLS to multiple parallel entityManagers', async () => {
-    const fooEntityManager = fooConnection.createEntityManager();
-    const barEntityManager = barConnection.createEntityManager();
-    const entityManager = migrationConnection.createEntityManager();
+    const fooEntityManager = this.fooConnection.createEntityManager();
+    const barEntityManager = this.barConnection.createEntityManager();
+    const entityManager = this.migrationDataSource.createEntityManager();
 
     await expectTenantDataEventually(
       expect(fooEntityManager.find(Category)),
-      categories,
+      this.categories,
       1,
       fooTenant,
     );
     await expectTenantDataEventually(
       expect(barEntityManager.find(Category)),
-      categories,
+      this.categories,
       1,
       barTenant,
     );
@@ -149,16 +87,16 @@ describe('EntityManager', function () {
       barCategoryFindProm,
       categoryFindProm,
     ]).then(async ([foo, bar, cat]) => {
-      await expectTenantData(expect(foo), categories, 1, fooTenant);
-      await expectTenantData(expect(bar), categories, 1, barTenant);
-      await expect(cat).to.have.lengthOf(2).and.to.deep.equal(categories);
+      expectTenantData(expect(foo), this.categories, 1, fooTenant);
+      expectTenantData(expect(bar), this.categories, 1, barTenant);
+      expect(cat).to.have.lengthOf(2).and.to.deep.equal(this.categories);
     });
   });
 
   it('should apply RLS to relation queries', async () => {
-    const fooEntityManager = fooConnection.createEntityManager();
-    const barEntityManager = barConnection.createEntityManager();
-    const entityManager = migrationConnection.createEntityManager();
+    const fooEntityManager = this.fooConnection.createEntityManager();
+    const barEntityManager = this.barConnection.createEntityManager();
+    const entityManager = this.migrationDataSource.createEntityManager();
 
     await expectPostDataRelation(
       expect(
@@ -168,7 +106,7 @@ describe('EntityManager', function () {
           },
         }),
       ),
-      posts,
+      this.posts,
       1,
       fooTenant,
     );
@@ -180,7 +118,7 @@ describe('EntityManager', function () {
           },
         }),
       ),
-      posts,
+      this.posts,
       1,
       barTenant,
     );
@@ -204,13 +142,25 @@ describe('EntityManager', function () {
     // execute them in parallel, the results should still be correct
     await Promise.all([fooPostFindProm, barPostFindProm, postFindProm]).then(
       async ([foo, bar, cat]) => {
-        await expectPostDataRelation(expect(foo), posts, 1, fooTenant, false);
-        await expectPostDataRelation(expect(bar), posts, 1, barTenant, false);
+        await expectPostDataRelation(
+          expect(foo),
+          this.posts,
+          1,
+          fooTenant,
+          false,
+        );
+        await expectPostDataRelation(
+          expect(bar),
+          this.posts,
+          1,
+          barTenant,
+          false,
+        );
 
-        await expect(cat)
+        expect(cat)
           .to.have.lengthOf(3)
           .satisfy((arr: Post[]) => arr.every(a => !!a.categories))
-          .and.to.deep.equal(posts);
+          .and.to.deep.equal(this.posts);
       },
     );
   });
@@ -223,7 +173,7 @@ describe('EntityManager', function () {
       queryPrototypeSpy = Sinon.spy(PostgresQueryRunner.prototype, 'query');
 
       connectedQueryRunnersStub = Sinon.stub(
-        (tenantUserConnection.driver as PostgresDriver).connectedQueryRunners,
+        (this.rlsDataSource.driver as PostgresDriver).connectedQueryRunners,
         'push',
       ).callThrough();
     });
@@ -232,8 +182,8 @@ describe('EntityManager', function () {
     });
 
     it('should apply RLS to queued queries', async () => {
-      const fooEntityManager = fooConnection.createEntityManager();
-      const barEntityManager = barConnection.createEntityManager();
+      const fooEntityManager = this.fooConnection.createEntityManager();
+      const barEntityManager = this.barConnection.createEntityManager();
 
       const promises = [];
 
@@ -241,7 +191,7 @@ describe('EntityManager', function () {
 
       connectedQueryRunnersStub.callsFake((...args) => {
         const len = connectedQueryRunnersStub.wrappedMethod.bind(
-          (tenantUserConnection.driver as PostgresDriver).connectedQueryRunners,
+          (this.rlsDataSource.driver as PostgresDriver).connectedQueryRunners,
         )(...args);
         connectedQueryRunnersLengthHistory.push(len);
         return len;
@@ -258,15 +208,15 @@ describe('EntityManager', function () {
       await Promise.all(promises).then(async results => {
         let i = 0;
         // should have 4 queries per call * 20 queries
-        await expect(queryPrototypeSpy).to.have.callCount(60);
+        expect(queryPrototypeSpy).to.have.callCount(60);
 
         // should have had 20 calls in total. One per query
-        await expect(connectedQueryRunnersStub).to.have.callCount(20);
+        expect(connectedQueryRunnersStub).to.have.callCount(20);
         for (const result of results) {
           if (i % 2 === 0) {
-            await expectTenantData(expect(result), categories, 1, fooTenant);
+            expectTenantData(expect(result), this.categories, 1, fooTenant);
           } else {
-            await expectTenantData(expect(result), categories, 1, barTenant);
+            expectTenantData(expect(result), this.categories, 1, barTenant);
           }
           i += 1;
         }
@@ -278,13 +228,13 @@ describe('EntityManager', function () {
 
   describe('transaction', () => {
     it('should apply RLS to transaction', async () => {
-      const fooEntityManager = fooConnection.createEntityManager();
-      const barEntityManager = barConnection.createEntityManager();
+      const fooEntityManager = this.fooConnection.createEntityManager();
+      const barEntityManager = this.barConnection.createEntityManager();
 
       await fooEntityManager.transaction(async tem => {
         await expectTenantDataEventually(
           expect(tem.find(Category)),
-          categories,
+          this.categories,
           1,
           fooTenant,
         );
@@ -293,7 +243,7 @@ describe('EntityManager', function () {
       await barEntityManager.transaction(async tem => {
         await expectTenantDataEventually(
           expect(tem.find(Category)),
-          categories,
+          this.categories,
           1,
           barTenant,
         );
@@ -301,13 +251,13 @@ describe('EntityManager', function () {
     });
 
     it('should apply RLS to parallel transactions', async () => {
-      const fooEntityManager = fooConnection.createEntityManager();
-      const barEntityManager = barConnection.createEntityManager();
+      const fooEntityManager = this.fooConnection.createEntityManager();
+      const barEntityManager = this.barConnection.createEntityManager();
 
       const fooProm = fooEntityManager.transaction(async tem => {
         await expectTenantDataEventually(
           expect(tem.find(Category)),
-          categories,
+          this.categories,
           1,
           fooTenant,
         );
@@ -317,7 +267,7 @@ describe('EntityManager', function () {
         async tem =>
           await expectTenantDataEventually(
             expect(tem.find(Category)),
-            categories,
+            this.categories,
             1,
             barTenant,
           ),

@@ -3,35 +3,20 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
 import { RLSConnection } from 'lib/common';
 import { TenancyModelOptions } from 'lib/interfaces';
-import fetch from 'node-fetch';
 import * as Sinon from 'sinon';
 import * as request from 'supertest';
 import { AppModule } from 'test/nestjs/src/app.module';
 import { AppService } from 'test/nestjs/src/app.service';
 import { Category } from 'test/util/entity/Category';
-import { Post } from 'test/util/entity/Post';
-import {
-  createData,
-  createTeantUser,
-  expectTenantData,
-  resetMultiTenant,
-  setupMultiTenant,
-} from 'test/util/helpers';
-import {
-  closeConnections,
-  getTypeOrmConfig,
-  getConnectionOptions,
-} from 'test/util/test-utils';
-import { DataSource, DataSourceOptions } from 'typeorm';
+import { CustomSuite } from 'test/util/harness';
+import { TestBootstrapHarness } from 'test/util/harness/testBootstrap';
+import { expectTenantData } from 'test/util/helpers';
+import { DataSource } from 'typeorm';
 
-const config = getTypeOrmConfig();
+describe('RLS Module', function (this: CustomSuite) {
+  const testBootstrapHarness = new TestBootstrapHarness();
 
-describe('RLS Module', () => {
   let app: INestApplication;
-  const tenantDbUser = 'tenant_aware_user';
-  let migrationConnection: DataSource;
-  let categories: Category[];
-  let posts: Post[];
   let moduleRef: TestingModule;
 
   const fooTenant: TenancyModelOptions = {
@@ -44,19 +29,9 @@ describe('RLS Module', () => {
     tenantId: 2,
   };
 
-  before(async () => {
-    migrationConnection = await setupDatabase(
-      migrationConnection,
-      tenantDbUser,
-    );
-    const testData = await createData(
-      fooTenant,
-      barTenant,
-      migrationConnection,
-    );
-    categories = testData.categories;
-    posts = testData.posts;
+  testBootstrapHarness.setupHooks(fooTenant, barTenant);
 
+  before(async () => {
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -68,9 +43,6 @@ describe('RLS Module', () => {
 
   after(async () => {
     await app.close();
-
-    await resetMultiTenant(migrationConnection, tenantDbUser);
-    await closeConnections([migrationConnection]);
   });
 
   it(`GET /status`, () => {
@@ -81,13 +53,13 @@ describe('RLS Module', () => {
     getAuthRequest(app, 'get', '/posts', fooTenant)
       .expect(200)
       .expect(res => {
-        expectTenantData(expect(res.body), posts, 1, fooTenant, true);
+        expectTenantData(expect(res.body), this.posts, 1, fooTenant, true);
       });
 
     return getAuthRequest(app, 'get', '/categories', fooTenant)
       .expect(200)
       .expect(res => {
-        expectTenantData(expect(res.body), categories, 1, fooTenant, true);
+        expectTenantData(expect(res.body), this.categories, 1, fooTenant, true);
       });
   });
 
@@ -95,7 +67,7 @@ describe('RLS Module', () => {
     return getAuthRequest(app, 'get', '/posts?useStream=true', fooTenant)
       .expect(200)
       .expect(res => {
-        expectTenantData(expect(res.body), posts, 1, fooTenant, true);
+        expectTenantData(expect(res.body), this.posts, 1, fooTenant, true);
       });
   });
 
@@ -103,7 +75,7 @@ describe('RLS Module', () => {
     return getAuthRequest(app, 'get', '/categories', barTenant)
       .expect(200)
       .expect(res => {
-        expectTenantData(expect(res.body), categories, 1, barTenant, true);
+        expectTenantData(expect(res.body), this.categories, 1, barTenant, true);
       });
   });
 
@@ -111,12 +83,12 @@ describe('RLS Module', () => {
     const fooReqProm = getAuthRequest(app, 'get', '/categories', fooTenant)
       .expect(200)
       .expect(res => {
-        expectTenantData(expect(res.body), categories, 1, fooTenant, true);
+        expectTenantData(expect(res.body), this.categories, 1, fooTenant, true);
       });
     const barReqProm = getAuthRequest(app, 'get', '/categories', barTenant)
       .expect(200)
       .expect(res => {
-        expectTenantData(expect(res.body), categories, 1, barTenant, true);
+        expectTenantData(expect(res.body), this.categories, 1, barTenant, true);
       });
 
     await Promise.all([fooReqProm, barReqProm]);
@@ -240,7 +212,13 @@ describe('RLS Module', () => {
       await getAuthRequest(app, 'get', '/categories', barTenant)
         .expect(200)
         .expect(res => {
-          expectTenantData(expect(res.body), categories, 1, barTenant, true);
+          expectTenantData(
+            expect(res.body),
+            this.categories,
+            1,
+            barTenant,
+            true,
+          );
         });
       expect(pending).to.be.true;
 
@@ -250,7 +228,7 @@ describe('RLS Module', () => {
 
       const resultBody = await result.json();
 
-      expectTenantData(expect(resultBody), categories, 1, fooTenant, true);
+      expectTenantData(expect(resultBody), this.categories, 1, fooTenant, true);
       // two requests and one call from setTimeout
       expect(connectionStub).calledTwice;
       expect(connectionStub.returnValues).to.have.lengthOf(2);
@@ -264,32 +242,6 @@ describe('RLS Module', () => {
     });
   });
 });
-
-async function setupDatabase(
-  migrationConnection: DataSource,
-  tenantDbUser: string,
-): Promise<DataSource> {
-  const migrationConnectionOptions = getConnectionOptions(
-    'postgres',
-    {
-      entities: [Post, Category],
-      schemaCreate: true,
-      dropSchema: true,
-    },
-    {
-      ...config,
-      name: 'migrationConnection',
-      synchronize: true,
-    } as DataSourceOptions,
-  );
-
-  migrationConnection = new DataSource(migrationConnectionOptions);
-  await migrationConnection.initialize();
-
-  await createTeantUser(migrationConnection, tenantDbUser);
-  await setupMultiTenant(migrationConnection, tenantDbUser);
-  return migrationConnection;
-}
 
 function getAuthRequest(
   app: INestApplication,
