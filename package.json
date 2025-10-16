@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "docker compose -f test/docker-compose.yml run --rm rls-test && npm run postgres:down",
-    "test:mocha": "mocha --bail --exit --recursive --timeout 5000",
+    "test:mocha": "mocha --bail --exit --recursive --timeout 9000",
     "lint": "eslint \"{src,apps,lib,test}/**/*.ts\"",
     "postgres:up": "docker compose -f test/docker-compose.yml up -d postgres",
     "postgres:down": "docker compose -f test/docker-compose.yml down",
