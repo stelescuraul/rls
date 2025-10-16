@@ -1,37 +1,20 @@
 import { expect } from 'chai';
 import * as Sinon from 'sinon';
-import { DataSource, DataSourceOptions } from 'typeorm';
+import { CustomSuite } from 'test/util/harness';
+import { TestBootstrapHarness } from 'test/util/harness/testBootstrap';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
-import { RLSConnection } from '../../lib/common';
 import { TenancyModelOptions } from '../interfaces';
+import { Category } from '../util/entity/Category';
+import { Post } from '../util/entity/Post';
 import {
-  createData,
-  createTeantUser,
   expectPostDataRelation,
   expectTenantData,
   expectTenantDataEventually,
-  resetMultiTenant,
-  setupMultiTenant,
 } from '../util/helpers';
-import {
-  closeTestingConnections,
-  getTypeOrmConfig,
-  reloadTestingDatabases,
-  setupSingleTestingConnection,
-} from '../util/test-utils';
-import { Category } from '../util/entity/Category';
-import { Post } from '../util/entity/Post';
-const configs = getTypeOrmConfig();
 
-describe('QueryBuilder', function () {
-  const tenantDbUser = 'tenant_aware_user';
-  let fooConnection: RLSConnection;
-  let barConnection: RLSConnection;
-  let migrationConnection: DataSource;
-  let tenantUserConnection: DataSource;
-  let categories: Category[];
-  let posts: Post[];
+describe('QueryBuilder', function (this: CustomSuite) {
+  const testBootstrapHarness = new TestBootstrapHarness();
 
   const fooTenant: TenancyModelOptions = {
     actorId: 10,
@@ -43,59 +26,15 @@ describe('QueryBuilder', function () {
     tenantId: 2,
   };
 
-  before(async () => {
-    const migrationConnectionOptions = await setupSingleTestingConnection(
-      'postgres',
-      {
-        entities: [Post, Category],
-        dropSchema: true,
-        schemaCreate: true,
-      },
-    );
-    const tenantAwareConnectionOptions = await setupSingleTestingConnection(
-      'postgres',
-      {
-        entities: [Post, Category],
-      },
-      {
-        ...configs[0],
-        name: 'tenantAware',
-        username: tenantDbUser,
-      } as DataSourceOptions,
-    );
-
-    migrationConnection = await new DataSource(
-      migrationConnectionOptions,
-    ).initialize();
-    await createTeantUser(migrationConnection, tenantDbUser);
-
-    tenantUserConnection = await new DataSource(
-      tenantAwareConnectionOptions,
-    ).initialize();
-    fooConnection = new RLSConnection(tenantUserConnection, fooTenant);
-    barConnection = new RLSConnection(tenantUserConnection, barTenant);
-  });
-  beforeEach(async () => {
-    await reloadTestingDatabases([migrationConnection]);
-    await setupMultiTenant(migrationConnection, tenantDbUser);
-
-    const testData = await createData(
-      fooTenant,
-      barTenant,
-      migrationConnection,
-    );
-    categories = testData.categories;
-    posts = testData.posts;
-  });
-  after(async () => {
-    await resetMultiTenant(migrationConnection, tenantDbUser);
-    await closeTestingConnections([migrationConnection, tenantUserConnection]);
-  });
+  testBootstrapHarness.setupHooks(fooTenant, barTenant);
 
   it('should return different queryBuilders', () => {
-    const fooQueryBuilder = fooConnection.createQueryBuilder(Post, 'post');
-    const barQueryBuilder = barConnection.createQueryBuilder(Post, 'post');
-    const queryBuilder = migrationConnection.createQueryBuilder(Post, 'post');
+    const fooQueryBuilder = this.fooConnection.createQueryBuilder(Post, 'post');
+    const barQueryBuilder = this.barConnection.createQueryBuilder(Post, 'post');
+    const queryBuilder = this.migrationDataSource.createQueryBuilder(
+      Post,
+      'post',
+    );
 
     expect(fooQueryBuilder).to.not.deep.equal(queryBuilder);
     expect(barQueryBuilder).to.not.deep.equal(queryBuilder);
@@ -103,25 +42,25 @@ describe('QueryBuilder', function () {
   });
 
   it('should apply RLS to queryBuilder', async () => {
-    const fooPostQueryBuilder = fooConnection
+    const fooPostQueryBuilder = this.fooConnection
       .createQueryBuilder(Post, 'post')
       .leftJoinAndSelect('post.categories', 'category');
-    const barPostQueryBuilder = barConnection
+    const barPostQueryBuilder = this.barConnection
       .createQueryBuilder(Post, 'post')
       .leftJoinAndSelect('post.categories', 'category');
-    const postQueryBuilder = migrationConnection
+    const postQueryBuilder = this.migrationDataSource
       .createQueryBuilder(Post, 'post')
       .leftJoinAndSelect('post.categories', 'category');
 
     await expectTenantDataEventually(
       expect(fooPostQueryBuilder.getMany()),
-      posts,
+      this.posts,
       1,
       fooTenant,
     );
     await expectTenantDataEventually(
       expect(barPostQueryBuilder.getMany()),
-      posts,
+      this.posts,
       1,
       barTenant,
     );
@@ -129,28 +68,28 @@ describe('QueryBuilder', function () {
   });
 
   it('should apply RLS to multiple parallel queryBuilders', async () => {
-    const fooPostQueryBuilder = fooConnection.createQueryBuilder(
+    const fooPostQueryBuilder = this.fooConnection.createQueryBuilder(
       Category,
       'categories',
     );
-    const barPostQueryBuilder = barConnection.createQueryBuilder(
+    const barPostQueryBuilder = this.barConnection.createQueryBuilder(
       Category,
       'categories',
     );
-    const postQueryBuilder = migrationConnection.createQueryBuilder(
+    const postQueryBuilder = this.migrationDataSource.createQueryBuilder(
       Category,
       'categories',
     );
 
     await expectTenantDataEventually(
       expect(fooPostQueryBuilder.getMany()),
-      categories,
+      this.categories,
       1,
       fooTenant,
     );
     await expectTenantDataEventually(
       expect(barPostQueryBuilder.getMany()),
-      categories,
+      this.categories,
       1,
       barTenant,
     );
@@ -165,32 +104,32 @@ describe('QueryBuilder', function () {
       barCategoryFindProm,
       categoryFindProm,
     ]).then(async ([foo, bar, cat]) => {
-      await expectTenantData(expect(foo), categories, 1, fooTenant);
-      await expectTenantData(expect(bar), categories, 1, barTenant);
-      await expect(cat).to.have.lengthOf(2).and.to.deep.equal(categories);
+      expectTenantData(expect(foo), this.categories, 1, fooTenant);
+      expectTenantData(expect(bar), this.categories, 1, barTenant);
+      expect(cat).to.have.lengthOf(2).and.to.deep.equal(this.categories);
     });
   });
 
   it('should apply RLS to self joined relations', async () => {
-    const fooPostQueryBuilder = fooConnection
+    const fooPostQueryBuilder = this.fooConnection
       .createQueryBuilder(Post, 'posts')
       .leftJoinAndSelect('posts.categories', 'categories');
-    const barPostQueryBuilder = barConnection
+    const barPostQueryBuilder = this.barConnection
       .createQueryBuilder(Post, 'posts')
       .leftJoinAndSelect('posts.categories', 'categories');
-    const postQueryBuilder = migrationConnection
+    const postQueryBuilder = this.migrationDataSource
       .createQueryBuilder(Post, 'posts')
       .leftJoinAndSelect('posts.categories', 'categories');
 
     await expectPostDataRelation(
       expect(fooPostQueryBuilder.getMany()),
-      posts,
+      this.posts,
       1,
       fooTenant,
     );
     await expectPostDataRelation(
       expect(barPostQueryBuilder.getMany()),
-      posts,
+      this.posts,
       1,
       barTenant,
     );
@@ -202,9 +141,21 @@ describe('QueryBuilder', function () {
     // execute them in parallel, the results should still be correct
     await Promise.all([fooPostFindProm, barPostFindProm, postFindProm]).then(
       async ([foo, bar, post]) => {
-        await expectPostDataRelation(expect(foo), posts, 1, fooTenant, false);
-        await expectPostDataRelation(expect(bar), posts, 1, barTenant, false);
-        await expect(post).to.have.lengthOf(3).and.to.deep.equal(posts);
+        await expectPostDataRelation(
+          expect(foo),
+          this.posts,
+          1,
+          fooTenant,
+          false,
+        );
+        await expectPostDataRelation(
+          expect(bar),
+          this.posts,
+          1,
+          barTenant,
+          false,
+        );
+        expect(post).to.have.lengthOf(3).and.to.deep.equal(this.posts);
       },
     );
   });
@@ -217,7 +168,7 @@ describe('QueryBuilder', function () {
       queryPrototypeSpy = Sinon.spy(PostgresQueryRunner.prototype, 'query');
 
       connectedQueryRunnersStub = Sinon.stub(
-        (tenantUserConnection.driver as PostgresDriver).connectedQueryRunners,
+        (this.rlsDataSource.driver as PostgresDriver).connectedQueryRunners,
         'push',
       ).callThrough();
     });
@@ -226,11 +177,11 @@ describe('QueryBuilder', function () {
     });
 
     it('should apply RLS to queued queries', async () => {
-      const fooPostQueryBuilder = fooConnection.createQueryBuilder(
+      const fooPostQueryBuilder = this.fooConnection.createQueryBuilder(
         Category,
         'categories',
       );
-      const barPostQueryBuilder = barConnection.createQueryBuilder(
+      const barPostQueryBuilder = this.barConnection.createQueryBuilder(
         Category,
         'categories',
       );
@@ -241,7 +192,7 @@ describe('QueryBuilder', function () {
 
       connectedQueryRunnersStub.callsFake((...args) => {
         const len = connectedQueryRunnersStub.wrappedMethod.bind(
-          (tenantUserConnection.driver as PostgresDriver).connectedQueryRunners,
+          (this.rlsDataSource.driver as PostgresDriver).connectedQueryRunners,
         )(...args);
         connectedQueryRunnersLengthHistory.push(len);
         return len;
@@ -258,15 +209,15 @@ describe('QueryBuilder', function () {
       await Promise.all(promises).then(async results => {
         let i = 0;
         // should have 4 queries per call * 20 queries
-        await expect(queryPrototypeSpy).to.have.callCount(60);
+        expect(queryPrototypeSpy).to.have.callCount(60);
 
         // should have had 20 calls in total. One per query
-        await expect(connectedQueryRunnersStub).to.have.callCount(20);
+        expect(connectedQueryRunnersStub).to.have.callCount(20);
         for (const result of results) {
           if (i % 2 === 0) {
-            await expectTenantData(expect(result), categories, 1, fooTenant);
+            expectTenantData(expect(result), this.categories, 1, fooTenant);
           } else {
-            await expectTenantData(expect(result), categories, 1, barTenant);
+            expectTenantData(expect(result), this.categories, 1, barTenant);
           }
           i += 1;
         }

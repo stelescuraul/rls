@@ -1,43 +1,38 @@
-import {
-  closeTestingConnections,
-  reloadTestingDatabases,
-  setupSingleTestingConnection,
-} from '../util/test-utils';
-import { Connection, createConnection, Driver } from 'typeorm';
+import { expect } from 'chai';
+import { CustomSuite, DataSourceHarness } from 'test/util/harness';
+import { Driver } from 'typeorm';
 import {
   RLSConnection,
   RLSPostgresDriver,
   RLSPostgresQueryRunner,
 } from '../../lib/common';
 import { TenancyModelOptions } from '../interfaces';
-import { expect } from 'chai';
+import { resetDatabases } from '../util/test-utils';
 
-describe('RLSPostgresDriver', () => {
+describe('RLSPostgresDriver', function (this: CustomSuite) {
+  const dataSourceHarness = new DataSourceHarness();
+
   let driver: RLSPostgresDriver;
   let originalDriver: Driver;
 
-  let connection: RLSConnection;
-  let originalConnection: Connection;
-
-  const tenantModelOptions: TenancyModelOptions = {
+  const fooTenantModelOptions: TenancyModelOptions = {
     actorId: 10,
     tenantId: 1,
   };
 
-  before(async () => {
-    const connectionOptions = await setupSingleTestingConnection('postgres', {
-      entities: [__dirname + '/entity/*{.js,.ts}'],
-      dropSchema: true,
-      schemaCreate: true,
-    });
+  const barTenantModelOptions: TenancyModelOptions = {
+    actorId: 20,
+    tenantId: 2,
+  };
 
-    originalConnection = await createConnection(connectionOptions);
-    originalDriver = originalConnection.driver;
-    connection = new RLSConnection(originalConnection, tenantModelOptions);
-    driver = connection.driver;
+  dataSourceHarness.setupHooks(fooTenantModelOptions, barTenantModelOptions);
+
+  before(async () => {
+    originalDriver = this.migrationDataSource.driver;
+    driver = this.fooConnection.driver;
   });
-  beforeEach(() => reloadTestingDatabases([connection]));
-  after(async () => await closeTestingConnections([originalConnection]));
+
+  beforeEach(() => resetDatabases([this.migrationDataSource]));
 
   it('should be instance of RLSPostgresDriver', () => {
     expect(driver).to.be.instanceOf(RLSPostgresDriver);
@@ -45,7 +40,7 @@ describe('RLSPostgresDriver', () => {
 
   it('should not be singleton instance', () => {
     expect(driver).to.not.equal(
-      new RLSPostgresDriver(connection, tenantModelOptions),
+      new RLSPostgresDriver(this.fooConnection, fooTenantModelOptions),
     );
   });
 
@@ -55,7 +50,9 @@ describe('RLSPostgresDriver', () => {
   });
 
   it('should use the RLSConnection', () => {
-    expect(driver).to.have.property('connection').and.deep.equal(connection);
+    expect(driver)
+      .to.have.property('connection')
+      .and.deep.equal(this.fooConnection);
     expect(driver)
       .to.have.property('connection')
       .and.be.instanceOf(RLSConnection);
@@ -78,10 +75,10 @@ describe('RLSPostgresDriver', () => {
 
       expect(qr)
         .to.have.property('tenantId')
-        .and.be.equal(tenantModelOptions.tenantId);
+        .and.be.equal(fooTenantModelOptions.tenantId);
       expect(qr)
         .to.have.property('actorId')
-        .and.be.equal(tenantModelOptions.actorId);
+        .and.be.equal(fooTenantModelOptions.actorId);
     });
   });
 });

@@ -1,40 +1,22 @@
 import { expect } from 'chai';
 import * as Sinon from 'sinon';
-import { DataSource, DataSourceOptions } from 'typeorm';
+import { User } from 'test/util/entity/User';
+import { CustomSuite } from 'test/util/harness';
+import { TestBootstrapHarness } from 'test/util/harness/testBootstrap';
 import { PostgresDriver } from 'typeorm/driver/postgres/PostgresDriver';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
-import { RLSConnection } from '../../lib/common';
 import { TenancyModelOptions } from '../interfaces';
+import { Category } from '../util/entity/Category';
+import { Post } from '../util/entity/Post';
 import {
-  createData,
-  createTeantUser,
   expectPostDataRelation,
   expectPostForTenant,
   expectTenantData,
   expectTenantDataEventually,
-  resetMultiTenant,
-  setupMultiTenant,
 } from '../util/helpers';
-import {
-  closeTestingConnections,
-  getTypeOrmConfig,
-  reloadTestingDatabases,
-  setupSingleTestingConnection,
-} from '../util/test-utils';
-import { Category } from '../util/entity/Category';
-import { Post } from '../util/entity/Post';
-import { User } from 'test/util/entity/User';
 
-const configs = getTypeOrmConfig();
-
-describe('Repository', function () {
-  const tenantDbUser = 'tenant_aware_user';
-  let fooConnection: RLSConnection;
-  let barConnection: RLSConnection;
-  let migrationConnection: DataSource;
-  let tenantUserConnection: DataSource;
-  let categories: Category[];
-  let posts: Post[];
+describe('Repository', function (this: CustomSuite) {
+  const testBootstrapHarness = new TestBootstrapHarness();
 
   const fooTenant: TenancyModelOptions = {
     actorId: 10,
@@ -46,59 +28,12 @@ describe('Repository', function () {
     tenantId: 2,
   };
 
-  before(async () => {
-    const migrationConnectionOptions = setupSingleTestingConnection(
-      'postgres',
-      {
-        entities: [Post, Category, User],
-        dropSchema: true,
-        schemaCreate: true,
-      },
-    );
-    const tenantAwareConnectionOptions = setupSingleTestingConnection(
-      'postgres',
-      {
-        entities: [Post, Category, User],
-      },
-      {
-        ...configs[0],
-        name: 'tenantAware',
-        username: tenantDbUser,
-      } as DataSourceOptions,
-    );
-
-    migrationConnection = await new DataSource(
-      migrationConnectionOptions,
-    ).initialize();
-    await createTeantUser(migrationConnection, tenantDbUser);
-
-    tenantUserConnection = await new DataSource(
-      tenantAwareConnectionOptions,
-    ).initialize();
-    fooConnection = new RLSConnection(tenantUserConnection, fooTenant);
-    barConnection = new RLSConnection(tenantUserConnection, barTenant);
-  });
-  beforeEach(async () => {
-    await reloadTestingDatabases([migrationConnection]);
-    await setupMultiTenant(migrationConnection, tenantDbUser);
-
-    const testData = await createData(
-      fooTenant,
-      barTenant,
-      migrationConnection,
-    );
-    categories = testData.categories;
-    posts = testData.posts;
-  });
-  after(async () => {
-    await resetMultiTenant(migrationConnection, tenantDbUser);
-    await closeTestingConnections([migrationConnection, tenantUserConnection]);
-  });
+  testBootstrapHarness.setupHooks(fooTenant, barTenant);
 
   it('should return different repositories', () => {
-    const fooPostRepository = fooConnection.getRepository(Post);
-    const barPostRepository = barConnection.getRepository(Post);
-    const postRepository = migrationConnection.getRepository(Post);
+    const fooPostRepository = this.fooConnection.getRepository(Post);
+    const barPostRepository = this.barConnection.getRepository(Post);
+    const postRepository = this.migrationDataSource.getRepository(Post);
 
     expect(fooPostRepository).to.not.deep.equal(postRepository);
     expect(barPostRepository).to.not.deep.equal(postRepository);
@@ -106,19 +41,19 @@ describe('Repository', function () {
   });
 
   it('should apply RLS to repository', async () => {
-    const fooPostRepository = fooConnection.getRepository(Post);
-    const barPostRepository = barConnection.getRepository(Post);
-    const postRepository = migrationConnection.getRepository(Post);
+    const fooPostRepository = this.fooConnection.getRepository(Post);
+    const barPostRepository = this.barConnection.getRepository(Post);
+    const postRepository = this.migrationDataSource.getRepository(Post);
 
     await expectTenantDataEventually(
       expect(fooPostRepository.find()),
-      posts,
+      this.posts,
       1,
       fooTenant,
     );
     await expectTenantDataEventually(
       expect(barPostRepository.find()),
-      posts,
+      this.posts,
       1,
       barTenant,
     );
@@ -127,34 +62,32 @@ describe('Repository', function () {
   });
 
   it('should use the right database users', async () => {
-    const [{ current_user: fooConnectionUser }] = await fooConnection.query(
-      'SELECT current_user;',
-    );
-    const [{ current_user: barConnectionUser }] = await barConnection.query(
-      'SELECT current_user;',
-    );
+    const [{ current_user: fooConnectionUser }] =
+      await this.fooConnection.query('SELECT current_user;');
+    const [{ current_user: barConnectionUser }] =
+      await this.barConnection.query('SELECT current_user;');
     const [{ current_user: migrationConnectionUser }] =
-      await migrationConnection.query('SELECT current_user;');
+      await this.migrationDataSource.query('SELECT current_user;');
 
-    expect(fooConnectionUser).to.be.equal(tenantDbUser);
-    expect(barConnectionUser).to.be.equal(tenantDbUser);
+    expect(fooConnectionUser).to.be.equal(this.tenantDbUser);
+    expect(barConnectionUser).to.be.equal(this.tenantDbUser);
     expect(migrationConnectionUser).to.be.equal('postgres');
   });
 
   it('should apply RLS to multiple parallel repositories', async () => {
-    const fooCategoryRepository = fooConnection.getRepository(Category);
-    const barCategoryRepository = barConnection.getRepository(Category);
-    const categoryRepository = migrationConnection.getRepository(Category);
+    const fooCategoryRepository = this.fooConnection.getRepository(Category);
+    const barCategoryRepository = this.barConnection.getRepository(Category);
+    const categoryRepository = this.migrationDataSource.getRepository(Category);
 
     await expectTenantDataEventually(
       expect(fooCategoryRepository.find()),
-      categories,
+      this.categories,
       1,
       fooTenant,
     );
     await expectTenantDataEventually(
       expect(barCategoryRepository.find()),
-      categories,
+      this.categories,
       1,
       barTenant,
     );
@@ -163,22 +96,24 @@ describe('Repository', function () {
     const barCategoryFindProm = barCategoryRepository.find();
     const categoryFindProm = categoryRepository.find();
 
+    const categories = this.categories;
+
     // execute them in parallel, the results should still be correct
     await Promise.all([
       fooCategoryFindProm,
       barCategoryFindProm,
       categoryFindProm,
     ]).then(async ([foo, bar, cat]) => {
-      await expectTenantData(expect(foo), categories, 1, fooTenant);
-      await expectTenantData(expect(bar), categories, 1, barTenant);
-      await expect(cat).to.have.lengthOf(2).and.to.deep.equal(categories);
+      expectTenantData(expect(foo), categories, 1, fooTenant);
+      expectTenantData(expect(bar), categories, 1, barTenant);
+      expect(cat).to.have.lengthOf(2).and.to.deep.equal(categories);
     });
   });
 
   it('should apply RLS to join relation strategy', async () => {
-    const fooPostRepository = fooConnection.getRepository(Post);
-    const barPostRepository = barConnection.getRepository(Post);
-    const postRepository = migrationConnection.getRepository(Post);
+    const fooPostRepository = this.fooConnection.getRepository(Post);
+    const barPostRepository = this.barConnection.getRepository(Post);
+    const postRepository = this.migrationDataSource.getRepository(Post);
 
     await expectPostDataRelation(
       expect(
@@ -188,7 +123,7 @@ describe('Repository', function () {
           },
         }),
       ),
-      posts,
+      this.posts,
       1,
       fooTenant,
     );
@@ -200,7 +135,7 @@ describe('Repository', function () {
           },
         }),
       ),
-      posts,
+      this.posts,
       1,
       barTenant,
     );
@@ -221,12 +156,14 @@ describe('Repository', function () {
       },
     });
 
+    const posts = this.posts;
+
     // execute them in parallel, the results should still be correct
     await Promise.all([fooPostFindProm, barPostFindProm, postFindProm]).then(
       async ([foo, bar, cat]) => {
         await expectPostDataRelation(expect(foo), posts, 1, fooTenant, false);
         await expectPostDataRelation(expect(bar), posts, 1, barTenant, false);
-        await expect(cat)
+        expect(cat)
           .to.have.lengthOf(3)
           .satisfy((arr: Post[]) => arr.every(a => !!a.categories))
           .and.to.deep.equal(posts);
@@ -235,9 +172,9 @@ describe('Repository', function () {
   });
 
   it('should apply RLS to query relation strategy', async () => {
-    const fooPostRepository = fooConnection.getRepository(Post);
-    const barPostRepository = barConnection.getRepository(Post);
-    const postRepository = migrationConnection.getRepository(Post);
+    const fooPostRepository = this.fooConnection.getRepository(Post);
+    const barPostRepository = this.barConnection.getRepository(Post);
+    const postRepository = this.migrationDataSource.getRepository(Post);
 
     await expectPostDataRelation(
       expect(
@@ -248,7 +185,7 @@ describe('Repository', function () {
           },
         }),
       ),
-      posts,
+      this.posts,
       1,
       fooTenant,
     );
@@ -261,7 +198,7 @@ describe('Repository', function () {
           },
         }),
       ),
-      posts,
+      this.posts,
       1,
       barTenant,
     );
@@ -285,12 +222,13 @@ describe('Repository', function () {
       },
     });
 
+    const posts = this.posts;
     // execute them in parallel, the results should still be correct
     await Promise.all([fooPostFindProm, barPostFindProm, postFindProm]).then(
       async ([foo, bar, cat]) => {
         await expectPostDataRelation(expect(foo), posts, 1, fooTenant, false);
         await expectPostDataRelation(expect(bar), posts, 1, barTenant, false);
-        await expect(cat)
+        expect(cat)
           .to.have.lengthOf(3)
           .satisfy((arr: Post[]) => arr.every(a => !!a.categories))
           .and.to.deep.equal(posts);
@@ -300,8 +238,8 @@ describe('Repository', function () {
 
   it('should apply RLS to all find operators', async () => {
     // use two repositories to also test the parallel execution for rls
-    const fooPostRepository = fooConnection.getRepository(Post);
-    const barPostRepository = barConnection.getRepository(Post);
+    const fooPostRepository = this.fooConnection.getRepository(Post);
+    const barPostRepository = this.barConnection.getRepository(Post);
 
     const fooFindByPromise = fooPostRepository.findBy({
       title: 'Foo post',
@@ -319,6 +257,8 @@ describe('Repository', function () {
     const barFindOneByPromise = barPostRepository.findOneBy({
       title: 'Bar post',
     });
+
+    const posts = this.posts;
 
     await Promise.all([
       fooFindByPromise,
@@ -347,7 +287,7 @@ describe('Repository', function () {
           false,
         );
 
-        await expect(fooFindOneResult).to.deep.equal(
+        expect(fooFindOneResult).to.deep.equal(
           posts.find(
             x =>
               x.tenantId === fooTenant.tenantId &&
@@ -356,14 +296,14 @@ describe('Repository', function () {
           ),
         );
 
-        await expectPostForTenant(fooFindOneResult, posts, fooTenant);
-        await expectPostForTenant(barFindOneByResult, posts, barTenant);
+        expectPostForTenant(fooFindOneResult, posts, fooTenant);
+        expectPostForTenant(barFindOneByResult, posts, barTenant);
       },
     );
   });
 
   it('should throw database error on first query and fulfill the second query', async () => {
-    const fooCategoryRepository = fooConnection.getRepository(Category);
+    const fooCategoryRepository = this.fooConnection.getRepository(Category);
 
     await expect(
       fooCategoryRepository.save({
@@ -383,7 +323,7 @@ describe('Repository', function () {
       queryPrototypeSpy = Sinon.spy(PostgresQueryRunner.prototype, 'query');
 
       connectedQueryRunnersStub = Sinon.stub(
-        (tenantUserConnection.driver as PostgresDriver).connectedQueryRunners,
+        (this.rlsDataSource.driver as PostgresDriver).connectedQueryRunners,
         'push',
       ).callThrough();
     });
@@ -392,8 +332,8 @@ describe('Repository', function () {
     });
 
     it('should apply RLS to queued queries', async () => {
-      const fooCategoryRepository = fooConnection.getRepository(Category);
-      const barCategoryRepository = barConnection.getRepository(Category);
+      const fooCategoryRepository = this.fooConnection.getRepository(Category);
+      const barCategoryRepository = this.barConnection.getRepository(Category);
 
       const promises = [];
 
@@ -401,7 +341,7 @@ describe('Repository', function () {
 
       connectedQueryRunnersStub.callsFake((...args) => {
         const len = connectedQueryRunnersStub.wrappedMethod.bind(
-          (tenantUserConnection.driver as PostgresDriver).connectedQueryRunners,
+          (this.rlsDataSource.driver as PostgresDriver).connectedQueryRunners,
         )(...args);
         connectedQueryRunnersLengthHistory.push(len);
         return len;
@@ -418,15 +358,15 @@ describe('Repository', function () {
       await Promise.all(promises).then(async results => {
         let i = 0;
         // should have 4 queries per call * 20 queries
-        await expect(queryPrototypeSpy).to.have.callCount(60);
+        expect(queryPrototypeSpy).to.have.callCount(60);
 
         // should have had 20 calls in total. One per query
-        await expect(connectedQueryRunnersStub).to.have.callCount(20);
+        expect(connectedQueryRunnersStub).to.have.callCount(20);
         for (const result of results) {
           if (i % 2 === 0) {
-            await expectTenantData(expect(result), categories, 1, fooTenant);
+            expectTenantData(expect(result), this.categories, 1, fooTenant);
           } else {
-            await expectTenantData(expect(result), categories, 1, barTenant);
+            expectTenantData(expect(result), this.categories, 1, barTenant);
           }
           i += 1;
         }
@@ -439,8 +379,8 @@ describe('Repository', function () {
 
   describe('Cyclic dependency on insert and remove', () => {
     it('should insert a user entity', async () => {
-      const originalUserRepo = migrationConnection.getRepository(User);
-      const rlsUserRepo = fooConnection.getRepository(User);
+      const originalUserRepo = this.migrationDataSource.getRepository(User);
+      const rlsUserRepo = this.fooConnection.getRepository(User);
 
       const originalRepoParentUser = originalUserRepo.create({
         tenantId: fooTenant.tenantId as number,
@@ -464,8 +404,8 @@ describe('Repository', function () {
     });
 
     it('should remove a user entity', async () => {
-      const originalUserRepo = migrationConnection.getRepository(User);
-      const rlsUserRepo = fooConnection.getRepository(User);
+      const originalUserRepo = this.migrationDataSource.getRepository(User);
+      const rlsUserRepo = this.fooConnection.getRepository(User);
 
       const originalRepoParentUser = originalUserRepo.create({
         tenantId: fooTenant.tenantId as number,

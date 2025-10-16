@@ -1,11 +1,8 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import {
-  Connection,
-  ConnectionOptions,
-  createConnection,
-  QueryFailedError,
-} from 'typeorm';
+import { CustomSuite } from 'test/util/harness';
+import { TestBootstrapHarness } from 'test/util/harness/testBootstrap';
+import { QueryFailedError } from 'typeorm';
 import { PostgresQueryRunner } from 'typeorm/driver/postgres/PostgresQueryRunner';
 import {
   RLSConnection,
@@ -13,36 +10,23 @@ import {
   RLSPostgresQueryRunner,
 } from '../../lib/common';
 import { TenancyModelOptions } from '../interfaces';
-import { Category } from '../util/entity/Category';
-import { Post } from '../util/entity/Post';
 import {
-  createData,
   createRunners,
-  createTeantUser,
   expectSameCategoryByTenantId,
   generateQueryStrings,
   releaseRunners,
-  resetMultiTenant,
+  resetQueryRunnerRole,
   runQueryTests,
   setQueryRunnerRole,
-  setupMultiTenant,
   setupResolvers,
 } from '../util/helpers';
-import {
-  closeTestingConnections,
-  getTypeOrmConfig,
-  reloadTestingDatabases,
-  setupSingleTestingConnection,
-} from '../util/test-utils';
-const configs = getTypeOrmConfig();
 
-describe('RLSPostgresQueryRunner', () => {
-  let connection: RLSConnection;
-  let originalConnection: Connection;
-  let migrationConnection: Connection;
+describe('RLSPostgresQueryRunner', function (this: CustomSuite) {
+  const testBootstrapHarness = new TestBootstrapHarness();
+
   let driver: RLSPostgresDriver;
-
   let queryRunner: RLSPostgresQueryRunner;
+  let connection: RLSConnection;
 
   const fooTenant: TenancyModelOptions = {
     actorId: 10,
@@ -54,39 +38,18 @@ describe('RLSPostgresQueryRunner', () => {
     tenantId: 2,
   };
 
+  testBootstrapHarness.setupHooks(fooTenant, barTenant);
+
   before(async () => {
-    const connectionOptions = setupSingleTestingConnection('postgres', {
-      entities: [Post, Category],
-      dropSchema: true,
-      schemaCreate: true,
-    });
-
-    const migrationConnectionOptions = setupSingleTestingConnection(
-      'postgres',
-      {
-        entities: [Post, Category],
-      },
-      {
-        ...configs[0],
-        name: 'migrationConnection',
-      } as ConnectionOptions,
-    );
-
-    originalConnection = await createConnection(connectionOptions);
-    migrationConnection = await createConnection(migrationConnectionOptions);
-
-    connection = new RLSConnection(originalConnection, fooTenant);
+    connection = new RLSConnection(this.migrationDataSource, fooTenant);
     driver = connection.driver;
   });
+
   beforeEach(async () => {
-    await reloadTestingDatabases([migrationConnection]);
     queryRunner = new RLSPostgresQueryRunner(driver, 'master', fooTenant);
   });
+
   afterEach(async () => await queryRunner.release());
-  after(
-    async () =>
-      await closeTestingConnections([originalConnection, migrationConnection]),
-  );
 
   it('should be instance of RLSPostgresQueryRunner', () => {
     expect(queryRunner).to.be.instanceOf(RLSPostgresQueryRunner);
@@ -311,28 +274,12 @@ describe('RLSPostgresQueryRunner', () => {
   });
 
   describe('multi-tenant', () => {
-    const tenantDbUser = 'tenant_aware_user';
-    let categories: Category[];
-    let posts: Post[];
-
     beforeEach(async () => {
-      await createTeantUser(migrationConnection, tenantDbUser);
-      await setupMultiTenant(migrationConnection, tenantDbUser);
-
-      await setQueryRunnerRole(queryRunner, tenantDbUser);
-
-      const testData = await createData(
-        fooTenant,
-        barTenant,
-        migrationConnection,
-      );
-
-      categories = testData.categories;
-      posts = testData.posts;
+      await setQueryRunnerRole(queryRunner, this.tenantDbUser);
     });
 
     afterEach(async () => {
-      await resetMultiTenant(migrationConnection, tenantDbUser);
+      await resetQueryRunnerRole(queryRunner);
     });
 
     describe('virtual connection', () => {
@@ -341,7 +288,7 @@ describe('RLSPostgresQueryRunner', () => {
           `select current_user as "currentUser"`,
         );
 
-        expect(result.currentUser).to.be.equal(tenantDbUser);
+        expect(result.currentUser).to.be.equal(this.tenantDbUser);
       });
 
       it('should have the tenantId set', async () => {
@@ -364,7 +311,7 @@ describe('RLSPostgresQueryRunner', () => {
         return expect(queryRunner.query(`select * from category`))
           .to.eventually.have.lengthOf(1)
           .and.to.deep.equal(
-            categories
+            this.categories
               .filter(x => x.tenantId === fooTenant.tenantId)
               .map(x => x.toJson()),
           );
@@ -374,7 +321,7 @@ describe('RLSPostgresQueryRunner', () => {
         return expect(queryRunner.query(`select * from post`))
           .to.eventually.have.lengthOf(1)
           .and.to.deep.equal(
-            posts
+            this.posts
               .filter(
                 x =>
                   x.tenantId === fooTenant.tenantId &&
@@ -387,7 +334,7 @@ describe('RLSPostgresQueryRunner', () => {
       it('should not overwrite the tenantId', async () => {
         return expect(
           queryRunner.query(`select * from category where "tenantId" in ($1)`, [
-            categories
+            this.categories
               .filter(x => x.tenantId !== fooTenant.tenantId)
               .map(x => x.tenantId)
               .join(','),
@@ -457,7 +404,7 @@ describe('RLSPostgresQueryRunner', () => {
         await queryRunner.query(`update category set name = 'allowed'`);
 
         return expect(
-          originalConnection.query(
+          this.fooConnection.query(
             `select * from category where name = 'allowed'`,
           ),
         ).to.eventually.have.lengthOf(1);
@@ -467,7 +414,7 @@ describe('RLSPostgresQueryRunner', () => {
         await queryRunner.query(`update post set title = 'allowed'`);
 
         return expect(
-          originalConnection.query(
+          this.fooConnection.query(
             `select * from post where title = 'allowed'`,
           ),
         ).to.eventually.have.lengthOf(1);
@@ -475,8 +422,8 @@ describe('RLSPostgresQueryRunner', () => {
     });
 
     describe('original connection', () => {
-      it('should use postgres user', async () => {
-        const [result] = await originalConnection.query(
+      it('should use postgres user on migration connection', async () => {
+        const [result] = await this.migrationDataSource.query(
           `select current_user as "currentUser"`,
         );
 
@@ -485,7 +432,7 @@ describe('RLSPostgresQueryRunner', () => {
 
       it('should not have the tenantId set', async () => {
         return expect(
-          originalConnection.query(
+          this.migrationDataSource.query(
             `select current_setting('rls.tenant_id') as "tenantId"`,
           ),
         ).to.be.rejectedWith(
@@ -496,7 +443,7 @@ describe('RLSPostgresQueryRunner', () => {
 
       it('should not have the actorId set', async () => {
         return expect(
-          originalConnection.query(
+          this.migrationDataSource.query(
             `select current_setting('rls.actor_id') as "actorId"`,
           ),
         ).to.be.rejectedWith(
@@ -506,44 +453,48 @@ describe('RLSPostgresQueryRunner', () => {
       });
 
       it('should return all categories', () => {
-        return expect(originalConnection.query(`select * from category`))
+        return expect(this.migrationDataSource.query(`select * from category`))
           .to.eventually.have.lengthOf(2)
-          .and.to.be.deep.equal(categories.map(x => x.toJson()));
+          .and.to.be.deep.equal(this.categories.map(x => x.toJson()));
       });
 
       it('should return all posts', () => {
-        return expect(originalConnection.query(`select * from post`))
+        return expect(this.migrationDataSource.query(`select * from post`))
           .to.eventually.have.lengthOf(3)
-          .and.to.be.deep.equal(posts.map(x => x.toJson()));
+          .and.to.be.deep.equal(this.posts.map(x => x.toJson()));
       });
 
       it('should allow to insert for any tenant', async () => {
-        await originalConnection.query(
+        await this.migrationDataSource.query(
           `insert into category values (default, 66, 'allowed')`,
         );
 
         return expect(
-          originalConnection.query(
+          this.migrationDataSource.query(
             `select * from category where "tenantId" = 66`,
           ),
         ).to.eventually.have.lengthOf(1);
       });
 
       it('should allow to insert for any actor', async () => {
-        await originalConnection.query(
+        await this.migrationDataSource.query(
           `insert into post values (default, 66, 66, 'allowed')`,
         );
 
         return expect(
-          originalConnection.query(`select * from post where "userId" = 66`),
+          this.migrationDataSource.query(
+            `select * from post where "userId" = 66`,
+          ),
         ).to.eventually.have.lengthOf(1);
       });
 
       it('should be allowed to update for any tenant', async () => {
-        await originalConnection.query(`update category set name = 'allowed'`);
+        await this.migrationDataSource.query(
+          `update category set name = 'allowed'`,
+        );
 
         return expect(
-          originalConnection.query(`select * from category`),
+          this.migrationDataSource.query(`select * from category`),
         ).to.eventually.have.lengthOf(2);
       });
     });
@@ -563,7 +514,7 @@ describe('RLSPostgresQueryRunner', () => {
           'master',
           barTenant,
         );
-        await setQueryRunnerRole(localQueryRunner, tenantDbUser);
+        await setQueryRunnerRole(localQueryRunner, this.tenantDbUser);
 
         // By default allow the queries to go through
         queryPrototypeStub = sinon
@@ -592,8 +543,8 @@ describe('RLSPostgresQueryRunner', () => {
         const fooCategories = await queryRunner.query(fooQueryString);
         const barCategories = await localQueryRunner.query(barQueryString);
 
-        expectSameCategoryByTenantId(barCategories, categories, barTenant);
-        expectSameCategoryByTenantId(fooCategories, categories, fooTenant);
+        expectSameCategoryByTenantId(barCategories, this.categories, barTenant);
+        expectSameCategoryByTenantId(fooCategories, this.categories, fooTenant);
       });
 
       it('should not have race conditions when first query takes longer', async () => {
@@ -626,7 +577,7 @@ describe('RLSPostgresQueryRunner', () => {
         expect(queryPrototypeStub).to.have.been.calledWith(barQueryString);
         expectSameCategoryByTenantId(
           barTenantCategoryResult,
-          categories,
+          this.categories,
           barTenant,
         );
         expect(pending).to.be.true;
@@ -637,7 +588,7 @@ describe('RLSPostgresQueryRunner', () => {
         expect(pending).to.be.false;
         expectSameCategoryByTenantId(
           fooTenantCategoryResult,
-          categories,
+          this.categories,
           fooTenant,
         );
 
@@ -661,7 +612,7 @@ describe('RLSPostgresQueryRunner', () => {
           // The first 2 queryRunners are already created
           // queryRunner and localQueryRunner
           tenantsOrder.slice(2),
-          tenantDbUser,
+          this.tenantDbUser,
           driver,
         );
 
@@ -685,7 +636,7 @@ describe('RLSPostgresQueryRunner', () => {
           results.forEach((result, indx) => {
             expectSameCategoryByTenantId(
               result,
-              categories,
+              this.categories,
               tenantsOrder[indx],
             );
           });
@@ -697,31 +648,15 @@ describe('RLSPostgresQueryRunner', () => {
   });
 
   describe('connection pool with size 1', () => {
-    const tenantDbUser = 'tenant_aware_user';
-    let singleConnection: Connection;
     let fooRlsConnection: RLSConnection;
     let singleQueryRunner: RLSPostgresQueryRunner;
     let localDriver: RLSPostgresDriver;
 
     before(async () => {
-      const tenantConnectionOptions = setupSingleTestingConnection(
-        'postgres',
-        {
-          entities: [Post, Category],
-          logging: false,
-        },
-        {
-          ...configs[0],
-          name: 'tenantConnection',
-          extra: {
-            poolSize: 1,
-          },
-          logging: false,
-        } as ConnectionOptions,
+      fooRlsConnection = new RLSConnection(
+        this.singlePoolRlsDataSource,
+        fooTenant,
       );
-
-      singleConnection = await createConnection(tenantConnectionOptions);
-      fooRlsConnection = new RLSConnection(singleConnection, fooTenant);
       localDriver = fooRlsConnection.driver;
     });
 
@@ -731,19 +666,11 @@ describe('RLSPostgresQueryRunner', () => {
         'master',
         fooTenant,
       );
-
-      await createTeantUser(migrationConnection, tenantDbUser);
-      await setupMultiTenant(migrationConnection, tenantDbUser);
-      await setQueryRunnerRole(singleQueryRunner, tenantDbUser);
-      await createData(fooTenant, barTenant, migrationConnection);
     });
 
     afterEach(async () => {
-      await resetMultiTenant(migrationConnection, tenantDbUser);
       await singleQueryRunner.release();
     });
-
-    after(async () => await closeTestingConnections([singleConnection]));
 
     it('should not persist the settings in connection from the pool', async () => {
       // Force throwing an error in the query
@@ -756,7 +683,7 @@ describe('RLSPostgresQueryRunner', () => {
 
       // Since we released the queryrunner back in the pool, when we create a new one
       // we in fact receive the one used above from pg pool
-      const queryRunner2 = singleConnection.createQueryRunner();
+      const queryRunner2 = this.singlePoolRlsDataSource.createQueryRunner();
 
       /**
        * Since this query is not RLS bound, this will return the set tenant
